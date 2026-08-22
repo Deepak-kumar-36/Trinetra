@@ -1,46 +1,86 @@
-import React from 'react';
-import { Card } from '../../components/ui/Card';
-import { Chip } from '../../components/ui/Chip';
-import { ShieldAlert, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
 
 export const CitizenHome: React.FC = () => {
+  const [sosActive, setSosActive] = useState(false);
+
+  const handleSosStart = () => {
+    setSosActive(true);
+    // Real implementation would have a timer here
+  };
+
+  const handleSosEnd = () => {
+    setSosActive(false);
+  };
+
   return (
-    <div style={{ padding: 'var(--margin-mobile)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2 style={{ fontSize: '28px', margin: 0 }}>Active Status</h2>
-        <ShieldAlert color="var(--secondary-container)" size={28} />
+    <div className="flex-1 flex flex-col p-margin-mobile gap-section-gap overflow-y-auto max-w-[1440px] mx-auto w-full relative animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
+      {/* Massive SOS Button */}
+      <section className="w-full flex-grow-0 flex items-center justify-center min-h-[353px] md:min-h-[442px] relative mb-8">
+        <button 
+          className={`bg-stone-bg text-sage-primary w-[280px] h-[280px] md:w-[400px] md:h-[400px] rounded-full flex flex-col items-center justify-center border border-outline-variant/50 pulse-border active:scale-95 transition-all shadow-[0_8px_32px_rgba(140,115,85,0.15)] hover:shadow-[0_12px_48px_rgba(140,115,85,0.25)] relative overflow-hidden group ${sosActive ? 'bg-secondary-container scale-95' : ''}`}
+          onMouseDown={handleSosStart}
+          onTouchStart={handleSosStart}
+          onMouseUp={handleSosEnd}
+          onMouseLeave={handleSosEnd}
+          onTouchEnd={handleSosEnd}
+        >
+          <div className="absolute inset-0 bg-primary-container/5 group-active:bg-primary-container/10 transition-colors z-10 pointer-events-none rounded-full"></div>
+          <span className="font-display-lg text-[72px] md:text-[120px] font-extrabold leading-none tracking-tighter z-20 text-earth-accent">SOS</span>
+          <span className="font-label-sm text-label-sm uppercase mt-4 z-20 text-on-surface-variant">Hold for 3s</span>
+        </button>
+      </section>
+
+      {/* AI Edge Triage Status */}
+      <div className="bg-surface-container-low border border-outline-variant/30 p-6 rounded-xl flex items-center gap-6 mb-4 shadow-sm">
+        <div className="w-16 h-16 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0">
+          <span className="material-symbols-outlined text-3xl font-light">graphic_eq</span>
+        </div>
+        <div className="flex-1">
+          <h3 className="font-label-sm text-label-sm text-earth-accent uppercase mb-1">AI Edge Triage</h3>
+          <p className="text-on-surface-variant font-body-md">Monitoring Ambient Sounds...</p>
+        </div>
+        <span className="material-symbols-outlined text-soft-olive text-3xl font-light">check_circle</span>
       </div>
 
-      {/* Active Incident Mock */}
-      <Card variant="hazard" hazardStatus="danger" onClick={() => console.log('View incident')}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h3 style={{ margin: 0, fontSize: '20px' }}>Flooding - Trapped</h3>
-          <Chip label="Prioritized" variant="danger" />
+      {/* Predictive Grid */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
+        {/* Survival Mesh Status */}
+        <div className="bg-stone-bg border border-outline-variant/30 rounded-xl p-8 flex flex-col justify-between min-h-[200px] hover:border-earth-accent/50 hover:shadow-md transition-all cursor-pointer group">
+          <div className="flex justify-between items-start mb-4">
+            <span className="material-symbols-outlined text-sage-primary text-4xl group-hover:scale-110 transition-transform font-light">hub</span>
+            <div className="bg-primary-fixed text-on-primary-fixed px-3 py-1.5 rounded-full font-label-sm text-xs uppercase flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-sage-primary animate-pulse"></div>
+              Active
+            </div>
+          </div>
+          <div>
+            <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-charcoal-text">Survival Mesh</h3>
+            <p className="font-label-sm text-earth-accent uppercase mt-2">12 Nearby Nodes</p>
+          </div>
         </div>
-        <p style={{ margin: '0 0 16px 0', color: 'var(--on-surface-variant)' }}>
-          Reported 12m ago • 3 people affected
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--primary-container)' }} />
-          <span style={{ fontSize: '14px', fontFamily: 'var(--font-family-label)' }}>AWAITING RESPONDER</span>
-        </div>
-      </Card>
 
-      <div>
-        <h3 style={{ fontSize: '20px', marginBottom: '16px' }}>Safety Information</h3>
-        <div style={{ display: 'flex', overflowX: 'auto', gap: '16px', paddingBottom: '16px', margin: '0 -20px', padding: '0 20px 16px 20px' }}>
-          <Card variant="elevated" className="carousel-card" style={{ minWidth: '240px', flex: '0 0 auto' }}>
-            <h4 style={{ margin: '0 0 8px 0', color: 'var(--secondary-container)' }}>Flood Safety</h4>
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--on-surface-variant)' }}>Move to higher ground immediately. Do not walk through moving water.</p>
-          </Card>
-          <Card variant="elevated" className="carousel-card" style={{ minWidth: '240px', flex: '0 0 auto' }}>
-            <h4 style={{ margin: '0 0 8px 0', color: 'var(--secondary-container)' }}>Emergency Kit</h4>
-            <p style={{ margin: 0, fontSize: '14px', color: 'var(--on-surface-variant)' }}>Keep water, flashlight, and first aid ready.</p>
-          </Card>
+        {/* Triage Tile */}
+        <div className="bg-stone-bg border border-outline-variant/30 rounded-xl p-8 flex flex-col justify-between min-h-[200px] hover:border-earth-accent/50 hover:shadow-md transition-all cursor-pointer group">
+          <div className="flex justify-between items-start mb-4">
+            <span className="material-symbols-outlined text-sage-primary text-4xl group-hover:scale-110 transition-transform font-light">file_download</span>
+          </div>
+          <div>
+            <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-charcoal-text">Triage Protocol</h3>
+            <p className="font-label-sm text-on-surface-variant uppercase mt-2">Initiate Assessment</p>
+          </div>
         </div>
-      </div>
-      
+
+        {/* Medical ID Tile */}
+        <div className="bg-stone-bg border border-outline-variant/30 rounded-xl p-8 flex flex-col justify-between min-h-[200px] hover:border-earth-accent/50 hover:shadow-md transition-all cursor-pointer group">
+          <div className="flex justify-between items-start mb-4">
+            <span className="material-symbols-outlined text-sage-primary text-4xl group-hover:scale-110 transition-transform font-light">medical_services</span>
+          </div>
+          <div>
+            <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-charcoal-text">Medical Profile</h3>
+            <p className="font-label-sm text-on-surface-variant uppercase mt-2">Critical Data</p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

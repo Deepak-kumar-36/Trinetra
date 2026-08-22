@@ -1,106 +1,137 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Mic, Camera, ArrowLeft } from 'lucide-react';
 
 export const ReportEmergency: React.FC = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState<'input' | 'location' | 'review'>('input');
+  const [severity, setSeverity] = useState('medium');
+  const [description, setDescription] = useState('');
+  const [peopleCount, setPeopleCount] = useState('');
+  const [isMedical, setIsMedical] = useState(false);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', backgroundColor: 'var(--background)' }}>
-      {/* Header */}
-      <div style={{ padding: '24px 20px', display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1px solid var(--surface-variant)' }}>
-        <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: 'var(--on-surface)', cursor: 'pointer', padding: 0 }}>
-          <ArrowLeft size={24} />
-        </button>
-        <h2 style={{ margin: 0, fontSize: '24px' }}>Report Emergency</h2>
+    <div className="flex-grow w-full max-w-[1040px] mx-auto px-margin-mobile md:px-margin-desktop py-section-gap pb-32">
+      <div className="mb-section-gap fade-in-up stagger-1">
+        <h2 className="font-headline-lg-mobile md:font-headline-lg text-on-surface mb-2">Citizen Report</h2>
+        <p className="font-body-md text-on-surface-variant">Please provide details about the situation. Information helps dispatch the appropriate response team quickly.</p>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '24px 20px' }}>
-        {step === 'input' && (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <p style={{ color: 'var(--on-surface-variant)', fontSize: '18px', marginBottom: '32px' }}>
-              Describe the situation clearly. We will use AI to extract the details.
-            </p>
-            
-            <Input 
-              label="What is happening?" 
-              placeholder="e.g. 3 people trapped in flooded house..." 
-              style={{ minHeight: '120px' }}
+      <form className="space-y-gutter bg-surface-container-lowest rounded-xl p-6 md:p-10 shadow-[0_4px_32px_rgba(140,115,85,0.06)] border border-surface-variant">
+        {/* Severity Selector */}
+        <div className="space-y-3 fade-in-up stagger-2">
+          <label className="font-label-sm text-charcoal-text block">Severity Level</label>
+          <div className="grid grid-cols-3 gap-3" role="radiogroup">
+            <label className="cursor-pointer relative">
+              <input 
+                className="peer sr-only" 
+                name="severity" 
+                type="radio" 
+                value="low"
+                checked={severity === 'low'}
+                onChange={(e) => setSeverity(e.target.value)}
+              />
+              <div className="h-touch-target rounded-lg border border-outline-variant bg-surface flex flex-col items-center justify-center transition-all peer-checked:bg-secondary-container peer-checked:border-secondary peer-checked:shadow-[0_2px_12px_rgba(113,90,62,0.15)] hover:bg-surface-container-high peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2">
+                <span aria-hidden="true" className="material-symbols-outlined mb-1 text-on-surface-variant peer-checked:text-on-secondary-container">info</span>
+                <span className="font-label-sm text-on-surface-variant peer-checked:text-on-secondary-container">Low</span>
+              </div>
+            </label>
+            <label className="cursor-pointer relative">
+              <input 
+                className="peer sr-only" 
+                name="severity" 
+                type="radio" 
+                value="medium"
+                checked={severity === 'medium'}
+                onChange={(e) => setSeverity(e.target.value)}
+              />
+              <div className="h-touch-target rounded-lg border border-outline-variant bg-surface flex flex-col items-center justify-center transition-all peer-checked:bg-primary-fixed peer-checked:border-primary peer-checked:shadow-[0_2px_12px_rgba(74,93,78,0.15)] hover:bg-surface-container-high peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2">
+                <span aria-hidden="true" className="material-symbols-outlined mb-1 text-on-surface-variant peer-checked:text-on-primary-fixed-variant">warning</span>
+                <span className="font-label-sm text-on-surface-variant peer-checked:text-on-primary-fixed-variant">Medium</span>
+              </div>
+            </label>
+            <label className="cursor-pointer relative">
+              <input 
+                className="peer sr-only" 
+                name="severity" 
+                type="radio" 
+                value="high"
+                checked={severity === 'high'}
+                onChange={(e) => setSeverity(e.target.value)}
+              />
+              <div className="h-touch-target rounded-lg border border-outline-variant bg-surface flex flex-col items-center justify-center transition-all peer-checked:bg-error-container peer-checked:border-error peer-checked:shadow-[0_2px_12px_rgba(186,26,26,0.15)] hover:bg-surface-container-high peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2">
+                <span aria-hidden="true" className="material-symbols-outlined mb-1 text-on-surface-variant peer-checked:text-on-error-container">emergency</span>
+                <span className="font-label-sm text-on-surface-variant peer-checked:text-on-error-container">High</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        {/* Emergency Description */}
+        <div className="space-y-2 pt-4 fade-in-up stagger-3">
+          <label className="font-label-sm text-charcoal-text block" htmlFor="description">Emergency description</label>
+          <textarea 
+            id="description" 
+            className="w-full rounded-lg bg-stone-bg border-transparent focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:ring-offset-1 text-on-surface font-body-md p-4 transition-colors resize-none placeholder:text-on-surface-variant outline-none" 
+            placeholder="What is happening right now?" 
+            rows={4}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          ></textarea>
+        </div>
+
+        {/* Number of People */}
+        <div className="space-y-2 pt-4 fade-in-up stagger-4">
+          <label className="font-label-sm text-charcoal-text block" htmlFor="people_count">Number of people involved</label>
+          <div className="relative">
+            <span aria-hidden="true" className="absolute inset-y-0 left-0 flex items-center pl-4 text-on-surface-variant pointer-events-none material-symbols-outlined">group</span>
+            <input 
+              id="people_count" 
+              className="w-full rounded-lg bg-stone-bg border-transparent focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:ring-offset-1 text-on-surface font-body-md p-4 pl-12 transition-colors placeholder:text-on-surface-variant h-14 outline-none" 
+              min="1" 
+              placeholder="Approximate count" 
+              type="number"
+              value={peopleCount}
+              onChange={(e) => setPeopleCount(e.target.value)}
             />
-
-            <div style={{ display: 'flex', gap: '16px', marginTop: '24px' }}>
-              <Button variant="secondary" style={{ flex: 1 }}>
-                <Mic size={20} /> Speak
-              </Button>
-              <Button variant="secondary" style={{ flex: 1 }}>
-                <Camera size={20} /> Photo
-              </Button>
-            </div>
-
-            <div style={{ marginTop: 'auto', paddingTop: '32px' }}>
-              <Button variant="primary" size="tactical" fullWidth onClick={() => setStep('location')}>
-                Next: Location
-              </Button>
-            </div>
           </div>
-        )}
+        </div>
 
-        {step === 'location' && (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <p style={{ color: 'var(--on-surface-variant)', fontSize: '18px', marginBottom: '24px' }}>
-              Confirm location for responders.
-            </p>
-            
-            <div style={{ backgroundColor: 'var(--surface-container)', height: '250px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '24px', border: '2px dashed var(--outline)' }}>
-              [Map View Placeholder]
-            </div>
-
-            <Input label="Address (Optional)" placeholder="Enter manual address" />
-
-            <div style={{ marginTop: 'auto', paddingTop: '32px' }}>
-              <Button variant="primary" size="tactical" fullWidth onClick={() => setStep('review')}>
-                Confirm Location
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {step === 'review' && (
-          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <div style={{ backgroundColor: 'var(--surface-container-high)', padding: '24px', borderRadius: '8px', marginBottom: '24px' }}>
-              <h3 style={{ margin: '0 0 16px 0', color: 'var(--primary-container)' }}>Incident Details</h3>
-              
-              <div style={{ marginBottom: '16px' }}>
-                <span className="tactical-label" style={{ color: 'var(--on-surface-variant)' }}>TYPE</span>
-                <p style={{ margin: '4px 0 0 0', fontSize: '18px' }}>Flooding</p>
+        {/* Medical Emergency Toggle */}
+        <div className="pt-4 pb-2 fade-in-up stagger-5">
+          <div className="flex items-center justify-between bg-surface-container-low p-4 rounded-lg border border-surface-variant">
+            <div className="flex items-center gap-3">
+              <div aria-hidden="true" className="w-10 h-10 rounded-full bg-error-container text-on-error-container flex items-center justify-center">
+                <span className="material-symbols-outlined">medical_services</span>
               </div>
-              
-              <div style={{ marginBottom: '16px' }}>
-                <span className="tactical-label" style={{ color: 'var(--on-surface-variant)' }}>PEOPLE AFFECTED</span>
-                <p style={{ margin: '4px 0 0 0', fontSize: '18px' }}>3 (Included 1 elderly)</p>
-              </div>
-
               <div>
-                <span className="tactical-label" style={{ color: 'var(--on-surface-variant)' }}>LOCATION</span>
-                <p style={{ margin: '4px 0 0 0', fontSize: '18px' }}>24.123, 75.456</p>
+                <span className="font-label-sm text-on-surface block" id="medical-toggle-label">Medical emergency?</span>
+                <span className="text-sm text-on-surface-variant">Are there injuries requiring EMS?</span>
               </div>
             </div>
-
-            <p style={{ color: 'var(--on-surface-variant)', fontSize: '14px', textAlign: 'center', marginBottom: '24px' }}>
-              By submitting, you confirm these details are accurate to your knowledge.
-            </p>
-
-            <div style={{ marginTop: 'auto' }}>
-              <Button variant="danger" size="tactical" fullWidth onClick={() => navigate('/citizen')}>
-                SUBMIT REPORT
-              </Button>
-            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                className="sr-only peer" 
+                type="checkbox" 
+                checked={isMedical}
+                onChange={(e) => setIsMedical(e.target.checked)}
+              />
+              <div aria-hidden="true" className="w-14 h-7 bg-surface-variant peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-error"></div>
+            </label>
           </div>
-        )}
-      </div>
+        </div>
+
+        {/* Submit Button */}
+        <div className="pt-8 fade-in-up stagger-6">
+          <button 
+            className="w-full h-14 bg-sage-primary text-on-primary rounded-xl font-label-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary transition-colors shadow-[0_8px_24px_rgba(74,93,78,0.2)] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" 
+            type="button"
+            onClick={() => navigate('/citizen')}
+          >
+            <span aria-hidden="true" className="material-symbols-outlined">send</span>
+            Submit Report
+          </button>
+        </div>
+        <p className="text-center text-sm text-on-surface-variant mt-4 font-body-md fade-in-up stagger-6">By submitting this form, you acknowledge that false reporting is a punishable offense.</p>
+      </form>
     </div>
   );
 };
