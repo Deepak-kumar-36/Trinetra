@@ -22,7 +22,7 @@ create table public.users (
 
 -- 3. INCIDENTS
 create table public.incidents (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     reporter_id uuid references public.users(id),
     status incident_status default 'reported',
     
@@ -46,7 +46,7 @@ create table public.incidents (
 
 -- 4. RESPONDERS
 create table public.responders (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     user_id uuid references public.users(id) on delete cascade unique,
     
     -- Capabilities
@@ -69,7 +69,7 @@ create table public.responders (
 
 -- 5. MISSIONS
 create table public.missions (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     incident_id uuid references public.incidents(id) not null,
     responder_id uuid references public.responders(id) not null,
     assigned_by uuid references public.users(id), -- Coordinator who dispatched
@@ -94,7 +94,7 @@ references public.missions(id) on delete set null;
 
 -- 6. SHELTERS & RESOURCES
 create table public.shelters (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     name text not null,
     location geography(point),
     total_capacity integer not null,
@@ -107,7 +107,7 @@ create table public.shelters (
 );
 
 create table public.resources (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     org_id uuid,
     type text not null, -- e.g. 'vehicle', 'medical_kit', 'food', 'water', 'blanket'
     name text not null,
@@ -122,7 +122,7 @@ create table public.resources (
 
 -- 7. NOTIFICATIONS, TIMELINES, AUDIT LOGS
 create table public.notifications (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     user_id uuid references public.users(id) not null,
     type text not null,
     priority text default 'normal',
@@ -135,8 +135,8 @@ create table public.notifications (
 );
 
 create table public.incident_timeline (
-    id uuid default uuid_generate_v4() primary key,
-    incident_id uuid references public.incidents(id) not null on delete cascade,
+    id uuid default gen_random_uuid() primary key,
+    incident_id uuid references public.incidents(id) on delete cascade not null,
     event_type text not null,
     actor_id uuid references public.users(id),
     description text not null,
@@ -145,7 +145,7 @@ create table public.incident_timeline (
 );
 
 create table public.audit_logs (
-    id uuid default uuid_generate_v4() primary key,
+    id uuid default gen_random_uuid() primary key,
     actor_id uuid references public.users(id),
     org_id uuid,
     action text not null,
