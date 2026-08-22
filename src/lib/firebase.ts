@@ -3,12 +3,12 @@ import { getFirestore } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB_Dd0KZrU4E9C4U_3r6UKodxXleGdbmXw",
-  authDomain: "trinetra-c4d6f.firebaseapp.com",
-  projectId: "trinetra-c4d6f",
-  storageBucket: "trinetra-c4d6f.firebasestorage.app",
-  messagingSenderId: "677283899294",
-  appId: "1:677283899294:web:4c9e76b1495f206173988f"
+  apiKey: "AIzaSyASFy9PmtwHt9Pa_SvHy5jHlj1EfugsRk4",
+  authDomain: "trinetra-f1bbf.firebaseapp.com",
+  projectId: "trinetra-f1bbf",
+  storageBucket: "trinetra-f1bbf.firebasestorage.app",
+  messagingSenderId: "99369902243",
+  appId: "1:99369902243:web:fa29e9e1897edd0143df16"
 };
 
 export const app = initializeApp(firebaseConfig);
