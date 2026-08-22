@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useTTS } from '../../contexts/TTSContext';
 
 export const CitizenPhoto = () => {
   const { user } = useAuth();
@@ -9,6 +10,7 @@ export const CitizenPhoto = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const { speak } = useTTS();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -99,6 +101,7 @@ export const CitizenPhoto = () => {
 
       // Successfully uploaded! Show success bubble and then navigate
       setIsSuccess(true);
+      speak("Emergency photo report submitted successfully. Help is on the way.");
       setTimeout(() => {
         navigate('/citizen', { replace: true });
       }, 3000);

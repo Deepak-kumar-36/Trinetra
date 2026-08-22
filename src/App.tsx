@@ -29,46 +29,49 @@ import { CoordinatorIncidents } from './pages/Coordinator/CoordinatorIncidents';
 import { CoordinatorMap } from './pages/Coordinator/CoordinatorMap';
 import { CoordinatorMissions } from './pages/Coordinator/CoordinatorMissions';
 import { CoordinatorResources } from './pages/Coordinator/CoordinatorResources';
+import { TTSProvider } from './contexts/TTSContext';
 
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Splash />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/role-selection" element={<RoleSelection />} />
+      <TTSProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Splash />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/role-selection" element={<RoleSelection />} />
 
-        {/* Citizen Flow */}
-        <Route path="/citizen" element={<CitizenLayout />}>
-          <Route index element={<CitizenHome />} />
-          <Route path="requests" element={<CitizenRequests />} />
-          <Route path="nearby" element={<CitizenNearby />} />
-          <Route path="profile" element={<CitizenProfile />} />
-          <Route path="photo" element={<CitizenPhoto />} />
-        </Route>
-        <Route path="/citizen/report" element={<ReportEmergency />} />
+          {/* Citizen Flow */}
+          <Route path="/citizen" element={<CitizenLayout />}>
+            <Route index element={<CitizenHome />} />
+            <Route path="requests" element={<CitizenRequests />} />
+            <Route path="nearby" element={<CitizenNearby />} />
+            <Route path="profile" element={<CitizenProfile />} />
+            <Route path="photo" element={<CitizenPhoto />} />
+          </Route>
+          <Route path="/citizen/report" element={<ReportEmergency />} />
 
-        {/* Volunteer Flow */}
-        <Route path="/volunteer" element={<VolunteerLayout />}>
-          <Route index element={<VolunteerHome />} />
-          <Route path="missions" element={<VolunteerMissions />} />
-          <Route path="map" element={<VolunteerMap />} />
-          <Route path="profile" element={<VolunteerProfile />} />
-        </Route>
+          {/* Volunteer Flow */}
+          <Route path="/volunteer" element={<VolunteerLayout />}>
+            <Route index element={<VolunteerHome />} />
+            <Route path="missions" element={<VolunteerMissions />} />
+            <Route path="map" element={<VolunteerMap />} />
+            <Route path="profile" element={<VolunteerProfile />} />
+          </Route>
 
-        {/* Coordinator Flow */}
-        <Route path="/coordinator" element={<CoordinatorLayout />}>
-          <Route index element={<CoordinatorOperations />} />
-          <Route path="incidents" element={<CoordinatorIncidents />} />
-          <Route path="map" element={<CoordinatorMap />} />
-          <Route path="missions" element={<CoordinatorMissions />} />
-          <Route path="resources" element={<CoordinatorResources />} />
-        </Route>
+          {/* Coordinator Flow */}
+          <Route path="/coordinator" element={<CoordinatorLayout />}>
+            <Route index element={<CoordinatorOperations />} />
+            <Route path="incidents" element={<CoordinatorIncidents />} />
+            <Route path="map" element={<CoordinatorMap />} />
+            <Route path="missions" element={<CoordinatorMissions />} />
+            <Route path="resources" element={<CoordinatorResources />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+          <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </TTSProvider>
     </AuthProvider>
   );
 }

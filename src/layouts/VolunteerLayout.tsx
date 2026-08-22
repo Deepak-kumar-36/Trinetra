@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useTTS } from '../contexts/TTSContext';
 
 export const VolunteerLayout: React.FC = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isTTSEnabled, toggleTTS, speak } = useTTS();
 
   const isMap = location.pathname.includes('/map');
 
@@ -66,6 +68,19 @@ export const VolunteerLayout: React.FC = () => {
       gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
       osc.start(); setTimeout(() => osc.stop(), 800);
     } catch(e) {}
+
+    // Auto-announce with TTS if enabled
+    let parsedTranscript: any = {};
+    try {
+      parsedTranscript = JSON.parse(incident.raw_transcript || '{}');
+    } catch (e) {}
+    const isPhotoReport = parsedTranscript.type === 'photo_report';
+    
+    if (isPhotoReport) {
+      speak("Incoming Photo SOS. A citizen has uploaded photo evidence of an emergency.");
+    } else {
+      speak("Incoming Voice SOS. A citizen's voice detection has triggered an emergency alert.");
+    }
   };
 
   return (
@@ -91,16 +106,32 @@ export const VolunteerLayout: React.FC = () => {
               <span className="font-bold text-primary ml-0.5">NETRA</span>
             </h1>
             
-            <NavLink 
-              to="/volunteer/profile"
-              className="hover:bg-surface-container-high transition-transform active:scale-95 duration-200 rounded-full overflow-hidden w-12 h-12 flex items-center justify-center border-2 border-surface-variant hover:border-sage-primary"
-            >
-              <img 
-                alt="Volunteer profile" 
-                className="w-full h-full object-cover" 
-                src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-              />
-            </NavLink>
+            <div className="flex items-center gap-1">
+              <button 
+                onClick={toggleTTS}
+                className={`p-2 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  isTTSEnabled 
+                    ? 'text-primary bg-primary-container' 
+                    : 'text-on-surface-variant hover:bg-surface-container-high'
+                }`}
+                title={isTTSEnabled ? 'Text-to-Speech ON' : 'Enable Text-to-Speech'}
+              >
+                <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: isTTSEnabled ? "'FILL' 1" : "'FILL' 0" }}>
+                  {isTTSEnabled ? 'volume_up' : 'volume_off'}
+                </span>
+              </button>
+
+              <NavLink 
+                to="/volunteer/profile"
+                className="hover:bg-surface-container-high transition-transform active:scale-95 duration-200 rounded-full overflow-hidden w-12 h-12 flex items-center justify-center border-2 border-surface-variant hover:border-sage-primary ml-1"
+              >
+                <img 
+                  alt="Volunteer profile" 
+                  className="w-full h-full object-cover" 
+                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
+                />
+              </NavLink>
+            </div>
           </div>
         </header>
       )}
