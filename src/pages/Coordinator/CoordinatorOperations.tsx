@@ -1,26 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 
 export const CoordinatorOperations: React.FC = () => {
   const [incidents, setIncidents] = useState<any[]>([]);
 
   useEffect(() => {
-    try {
-      const q = query(collection(db, 'incidents'), orderBy('createdAt', 'desc'), limit(10));
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const incData = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setIncidents(incData);
-      }, (error) => {
-        console.warn("Firestore snapshot error (expected if mock):", error);
-      });
-      return () => unsubscribe();
-    } catch (e) {
-      console.warn("Firestore init failed (expected if mock):", e);
-    }
+    const fetchIncidents = async () => {
+      const { data, error } = await supabase
+        .from('incidents')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (!error && data) {
+        setIncidents(data);
+      }
+    };
+
+    fetchIncidents();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'incidents' },
+        (payload) => {
+          fetchIncidents(); // re-fetch on change
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   return (

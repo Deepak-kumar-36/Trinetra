@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
-import { extractIncidentData } from '../../lib/aiExtraction';
+import { supabase } from '../../lib/supabase';
 import { calculateUrgencyScore } from '../../lib/dispatchEngine';
 
 export const ReportEmergency: React.FC = () => {
@@ -24,13 +22,19 @@ export const ReportEmergency: React.FC = () => {
     setErrorMsg('');
     
     try {
-      // 1. Extract structured data using Gemini AI
-      const aiData = await extractIncidentData(description);
+      // 1. Extract structured data using Supabase Edge Function
+      const { data: aiData, error: extractionError } = await supabase.functions.invoke('extract-incident', {
+        body: { text: description }
+      });
+      
+      if (extractionError) {
+        console.warn("AI extraction failed, using basic fallback", extractionError);
+        throw new Error('Failed to analyze emergency details.');
+      }
       
       // Override with user explicit input if provided
-      const finalPeopleCount = peopleCount ? parseInt(peopleCount) : aiData.peopleCount;
+      const finalPeopleCount = peopleCount ? parseInt(peopleCount) : (aiData.peopleCount || 1);
       const finalIsMedical = isMedical || aiData.isMedical;
-      // We respect user severity as base, but urgency score will calculate final priority.
       
       // 2. Calculate Urgency Score
       const { score, reasoning } = calculateUrgencyScore({
@@ -40,26 +44,26 @@ export const ReportEmergency: React.FC = () => {
         severity: severity as any,
       });
 
-      // 3. Save to Firestore
-      try {
-        await addDoc(collection(db, 'incidents'), {
-          description,
-          reportedSeverity: severity,
-          peopleCount: finalPeopleCount,
-          isMedical: finalIsMedical,
-          aiStructuredData: aiData,
-          urgencyScore: score,
-          urgencyReasoning: reasoning,
-          status: 'Received',
-          createdAt: serverTimestamp(),
-          reporterId: 'guest-user', // Mocked user ID
-          location: { lat: 28.6139, lng: 77.2090 } // Mocked location (New Delhi)
-        });
-      } catch (fbError) {
-        console.warn("Firebase save failed (expected if config is mock). Proceeding to citizen dashboard anyway.", fbError);
+      // 3. Save to Supabase
+      const { error: insertError } = await supabase.from('incidents').insert([{
+        description,
+        reportedSeverity: severity,
+        peopleCount: finalPeopleCount,
+        isMedical: finalIsMedical,
+        aiStructuredData: aiData,
+        urgencyScore: score,
+        urgencyReasoning: reasoning,
+        status: 'Received',
+        reporterId: 'guest-user',
+        location: { lat: 28.6139, lng: 77.2090 } // Mocked location (New Delhi)
+      }]);
+      
+      if (insertError) {
+        console.error("Supabase insert failed:", insertError);
+        throw new Error('Failed to save to database.');
       }
 
-      // 4. Redirect to tracking view (mocked to home for now)
+      // 4. Redirect to tracking view
       navigate('/citizen');
     } catch (error) {
       console.error("Submit failed:", error);
