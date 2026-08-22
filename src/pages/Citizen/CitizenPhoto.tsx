@@ -8,6 +8,7 @@ export const CitizenPhoto = () => {
   const navigate = useNavigate();
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -96,8 +97,11 @@ export const CitizenPhoto = () => {
       });
       supabase.removeChannel(channel);
 
-      // Successfully uploaded! Navigate back to home or show success
-      navigate('/citizen', { replace: true });
+      // Successfully uploaded! Show success bubble and then navigate
+      setIsSuccess(true);
+      setTimeout(() => {
+        navigate('/citizen', { replace: true });
+      }, 3000);
 
     } catch (err: any) {
       console.error('Photo upload failed:', err);
@@ -113,7 +117,7 @@ export const CitizenPhoto = () => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-surface-container-lowest overflow-hidden">
+    <div className="flex flex-col h-full bg-surface-container-lowest overflow-hidden relative">
       {/* Header */}
       <div className="bg-primary text-on-primary p-6 rounded-b-[2rem] shadow-md z-10 flex flex-col pt-12">
         <h1 className="font-display-lg text-[2.5rem] leading-tight mb-2">Photo SOS</h1>
@@ -180,6 +184,32 @@ export const CitizenPhoto = () => {
           onChange={onFileChange} 
         />
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="absolute top-4 left-4 right-4 bg-error text-white p-4 rounded-xl shadow-lg z-50 animate-fade-in flex items-start gap-3">
+          <span className="material-symbols-outlined">error</span>
+          <p className="font-body-md flex-1">{error}</p>
+          <button onClick={() => setError(null)} className="text-white/80 hover:text-white">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+      )}
+
+      {/* Success Overlay */}
+      {isSuccess && (
+        <div className="absolute inset-0 z-[100] bg-black/80 backdrop-blur-md flex flex-col items-center justify-center p-6 animate-fade-in">
+          <div className="w-full max-w-sm bg-surface-container-lowest rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center">
+            <div className="w-20 h-20 rounded-full bg-sage-primary text-white flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(74,93,78,0.4)] animate-[bounce_1s_ease-in-out]">
+              <span className="material-symbols-outlined text-[40px]">check_circle</span>
+            </div>
+            <h2 className="font-display-lg text-on-surface mb-2 text-2xl font-bold">Photo Sent!</h2>
+            <p className="font-body-lg text-on-surface-variant">
+              Your photo and precise location have been successfully transmitted to the Coordinator. Help is on the way.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
