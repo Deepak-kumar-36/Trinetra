@@ -342,13 +342,13 @@ export const DistressDetectionProvider: React.FC<{
 
       const finalize = async (lat: number, lon: number) => {
         try {
-          let audioPath: string | null = null;
+          // let audioPath: string | null = null;
           if (audioBlob) {
             const path = `voice-sos/${userId}/${Date.now()}.webm`;
             const { error: uploadError } = await supabase.storage
               .from('incident-audio')
               .upload(path, audioBlob);
-            if (!uploadError) audioPath = path;
+            // if (!uploadError) audioPath = path;
           }
 
           const { data, error } = await supabase.from('incidents').insert({
@@ -535,8 +535,8 @@ export const DistressDetectionProvider: React.FC<{
         shoutPollTimerRef.current = setInterval(() => {
           if (phaseRef.current !== 'IDLE' || !analyserRef.current || !analyserDataRef.current) return;
 
-          analyserRef.current.getByteTimeDomainData(analyserDataRef.current);
-          const { rms, crest } = computeRmsAndCrest(analyserDataRef.current);
+          analyserRef.current.getByteTimeDomainData(analyserDataRef.current as any);
+          const { rms, crest } = computeRmsAndCrest(analyserDataRef.current as any);
           const threshold = Math.max(baselineRmsRef.current * SHOUT_RATIO, SHOUT_ABS_FLOOR);
           const isLoudEnough = rms > threshold;
           const isSharpEnough = crest >= MIN_CREST_FACTOR;
