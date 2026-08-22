@@ -1,4 +1,4 @@
-import { getAI, getGenerativeModel, Schema, Type } from "firebase/ai";
+import { getAI, getGenerativeModel } from "firebase/ai";
 import { app } from "./firebase";
 
 // Initialize AI service
@@ -13,24 +13,24 @@ try {
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: {
-        type: Type.OBJECT,
+        type: "object",
         properties: {
-          peopleCount: { type: Type.INTEGER, description: "Number of people affected" },
-          isMedical: { type: Type.BOOLEAN, description: "Does the situation require medical attention?" },
-          severity: { type: Type.STRING, enum: ["Critical", "High", "Medium", "Low"], description: "Severity of the incident" },
+          peopleCount: { type: "integer", description: "Number of people affected" },
+          isMedical: { type: "boolean", description: "Does the situation require medical attention?" },
+          severity: { type: "string", enum: ["Critical", "High", "Medium", "Low"], description: "Severity of the incident" },
           vulnerabilities: { 
-            type: Type.ARRAY, 
-            items: { type: Type.STRING },
+            type: "array", 
+            items: { type: "string" },
             description: "E.g. elderly, children, disabled, pregnant, medical condition"
           },
           hazards: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
+            type: "array",
+            items: { type: "string" },
             description: "E.g. rising water, fire, structural damage, live wires"
           },
           requiredCapabilities: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING },
+            type: "array",
+            items: { type: "string" },
             description: "What responder equipment or skills are absolutely required (e.g. boat, first_aid, extraction_gear)"
           }
         },

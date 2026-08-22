@@ -1,4 +1,4 @@
-import { ExtractedIncidentData } from './aiExtraction';
+import type { ExtractedIncidentData } from './aiExtraction';
 
 export interface Responder {
   id: string;

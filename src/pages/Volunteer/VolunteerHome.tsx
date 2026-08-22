@@ -58,7 +58,7 @@ export const VolunteerHome: React.FC = () => {
                       <span className="font-bold text-earth-accent">+25</span>
                     </div>
                     <div className="flex justify-between items-center bg-surface p-4 rounded-lg shadow-sm border border-surface-variant/50">
-                      <span className="flex items-center gap-2"><span class="material-symbols-outlined text-earth-accent">child_care</span> Child involved</span>
+                      <span className="flex items-center gap-2"><span className="material-symbols-outlined text-earth-accent">child_care</span> Child involved</span>
                       <span className="font-bold text-earth-accent">+20</span>
                     </div>
                   </div>
