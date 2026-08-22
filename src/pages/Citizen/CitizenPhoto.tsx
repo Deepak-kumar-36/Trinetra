@@ -75,7 +75,6 @@ export const CitizenPhoto = () => {
         .from('incidents')
         .insert({
           reporter_id: user.id,
-          description: 'Photo Distress Report',
           status: 'reported',
           category: 'general',
           urgency_score: 100,

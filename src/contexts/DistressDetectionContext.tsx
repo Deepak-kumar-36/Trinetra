@@ -353,7 +353,6 @@ export const DistressDetectionProvider: React.FC<{
 
           const { data, error } = await supabase.from('incidents').insert({
             reporter_id: userId,
-            description: 'Voice SOS — Distress Keyword Detected',
             status: 'reported',
             category: 'general',
             urgency_score: 100,

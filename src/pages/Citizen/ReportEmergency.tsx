@@ -60,7 +60,6 @@ export const ReportEmergency: React.FC = () => {
 
       // 3. Save to Supabase
       const { error: insertError } = await supabase.from('incidents').insert([{
-        description,
         reporter_id: user.id, // Fixed: Send the actual authenticated user UUID
         status: 'reported', // Fixed: Use valid enum value 'reported' instead of 'Received'
         category: 'general',
