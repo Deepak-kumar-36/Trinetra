@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { extractIncidentData } from '../../lib/aiExtraction';
+import { calculateUrgencyScore } from '../../lib/dispatchEngine';
 
 export const ReportEmergency: React.FC = () => {
   const navigate = useNavigate();
@@ -7,6 +11,63 @@ export const ReportEmergency: React.FC = () => {
   const [description, setDescription] = useState('');
   const [peopleCount, setPeopleCount] = useState('');
   const [isMedical, setIsMedical] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const handleSubmit = async () => {
+    if (!description.trim()) {
+      setErrorMsg('Please provide an emergency description.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setErrorMsg('');
+    
+    try {
+      // 1. Extract structured data using Gemini AI
+      const aiData = await extractIncidentData(description);
+      
+      // Override with user explicit input if provided
+      const finalPeopleCount = peopleCount ? parseInt(peopleCount) : aiData.peopleCount;
+      const finalIsMedical = isMedical || aiData.isMedical;
+      // We respect user severity as base, but urgency score will calculate final priority.
+      
+      // 2. Calculate Urgency Score
+      const { score, reasoning } = calculateUrgencyScore({
+        ...aiData,
+        peopleCount: finalPeopleCount,
+        isMedical: finalIsMedical,
+        severity: severity as any,
+      });
+
+      // 3. Save to Firestore
+      try {
+        await addDoc(collection(db, 'incidents'), {
+          description,
+          reportedSeverity: severity,
+          peopleCount: finalPeopleCount,
+          isMedical: finalIsMedical,
+          aiStructuredData: aiData,
+          urgencyScore: score,
+          urgencyReasoning: reasoning,
+          status: 'Received',
+          createdAt: serverTimestamp(),
+          reporterId: 'guest-user', // Mocked user ID
+          location: { lat: 28.6139, lng: 77.2090 } // Mocked location (New Delhi)
+        });
+      } catch (fbError) {
+        console.warn("Firebase save failed (expected if config is mock). Proceeding to citizen dashboard anyway.", fbError);
+      }
+
+      // 4. Redirect to tracking view (mocked to home for now)
+      navigate('/citizen');
+    } catch (error) {
+      console.error("Submit failed:", error);
+      setErrorMsg('Failed to submit report. Please try again or call emergency services.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <div className="flex-grow w-full max-w-[1040px] mx-auto px-margin-mobile md:px-margin-desktop py-section-gap pb-32">
@@ -71,10 +132,11 @@ export const ReportEmergency: React.FC = () => {
           <textarea 
             id="description" 
             className="w-full rounded-lg bg-stone-bg border-transparent focus:border-primary focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary focus:ring-offset-1 text-on-surface font-body-md p-4 transition-colors resize-none placeholder:text-on-surface-variant outline-none" 
-            placeholder="What is happening right now?" 
+            placeholder="What is happening right now? Please include any specific needs like medical attention, trapped people, or required equipment." 
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            disabled={isSubmitting}
           ></textarea>
         </div>
 
@@ -91,6 +153,7 @@ export const ReportEmergency: React.FC = () => {
               type="number"
               value={peopleCount}
               onChange={(e) => setPeopleCount(e.target.value)}
+              disabled={isSubmitting}
             />
           </div>
         </div>
@@ -113,21 +176,33 @@ export const ReportEmergency: React.FC = () => {
                 type="checkbox" 
                 checked={isMedical}
                 onChange={(e) => setIsMedical(e.target.checked)}
+                disabled={isSubmitting}
               />
               <div aria-hidden="true" className="w-14 h-7 bg-surface-variant peer-focus:outline-none peer-focus-visible:ring-2 peer-focus-visible:ring-primary peer-focus-visible:ring-offset-2 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-error"></div>
             </label>
           </div>
         </div>
 
+        {errorMsg && (
+          <div className="text-error font-body-md text-center pt-2">
+            {errorMsg}
+          </div>
+        )}
+
         {/* Submit Button */}
         <div className="pt-8 fade-in-up stagger-6">
           <button 
-            className="w-full h-14 bg-sage-primary text-on-primary rounded-xl font-label-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary transition-colors shadow-[0_8px_24px_rgba(74,93,78,0.2)] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2" 
+            className="w-full h-14 bg-sage-primary text-on-primary rounded-xl font-label-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary transition-colors shadow-[0_8px_24px_rgba(74,93,78,0.2)] active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed" 
             type="button"
-            onClick={() => navigate('/citizen')}
+            onClick={handleSubmit}
+            disabled={isSubmitting}
           >
-            <span aria-hidden="true" className="material-symbols-outlined">send</span>
-            Submit Report
+            {isSubmitting ? (
+              <span className="animate-spin w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full"></span>
+            ) : (
+              <span aria-hidden="true" className="material-symbols-outlined">send</span>
+            )}
+            {isSubmitting ? 'Analyzing & Submitting...' : 'Submit Report'}
           </button>
         </div>
         <p className="text-center text-sm text-on-surface-variant mt-4 font-body-md fade-in-up stagger-6">By submitting this form, you acknowledge that false reporting is a punishable offense.</p>

@@ -1,6 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { collection, query, orderBy, onSnapshot, limit } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
 
 export const CoordinatorOperations: React.FC = () => {
+  const [incidents, setIncidents] = useState<any[]>([]);
+
+  useEffect(() => {
+    try {
+      const q = query(collection(db, 'incidents'), orderBy('createdAt', 'desc'), limit(10));
+      const unsubscribe = onSnapshot(q, (snapshot) => {
+        const incData = snapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setIncidents(incData);
+      }, (error) => {
+        console.warn("Firestore snapshot error (expected if mock):", error);
+      });
+      return () => unsubscribe();
+    } catch (e) {
+      console.warn("Firestore init failed (expected if mock):", e);
+    }
+  }, []);
+
   return (
     <div className="text-on-surface font-body-lg min-h-screen flex flex-col items-center relative bg-background">
       <header className="bg-surface/50 backdrop-blur-xl border-b border-outline-variant/20 flex justify-between items-center w-full px-margin-mobile h-touch-target fixed top-0 z-40">
@@ -14,7 +36,7 @@ export const CoordinatorOperations: React.FC = () => {
           <span className="font-bold text-primary uppercase ml-1">NETRA</span>
         </h1>
         <button className="text-primary hover:bg-surface-container-low transition-colors opacity-70 w-[88px] h-[88px] flex items-center justify-center">
-          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", fontSize: "32px" }}>close</span>
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1", fontSize: "32px" }}>notifications</span>
         </button>
       </header>
 
@@ -39,55 +61,59 @@ export const CoordinatorOperations: React.FC = () => {
             <span className="px-2 py-1 bg-error/10 text-error text-[12px] font-bold rounded-md border border-error/20 backdrop-blur-sm transition-all hover:bg-error/20">Threat to Life: 90</span>
             <span className="px-2 py-1 bg-sage-primary/10 text-sage-primary text-[12px] font-bold rounded-md border border-sage-primary/20 backdrop-blur-sm transition-all hover:bg-sage-primary/20">Medical: 80</span>
             <span className="px-2 py-1 bg-on-surface-variant/10 text-on-surface text-[12px] font-bold rounded-md border border-outline-variant/30 backdrop-blur-sm transition-all hover:bg-on-surface-variant/20">Property: 40</span>
-            <span className="px-2 py-1 bg-tertiary/10 text-tertiary text-[12px] font-bold rounded-md border border-tertiary/20 backdrop-blur-sm transition-all hover:bg-tertiary/20">Security: 65</span>
           </div>
         </div>
 
-        {/* Voice Stress Indicator */}
-        <div className="w-full bg-surface/80 backdrop-blur-md rounded-xl p-6 flex flex-col items-center justify-center min-h-[88px] shadow-sm border border-outline-variant/30 transition-all duration-300 hover:shadow-md">
-          <span className="font-label-sm text-label-sm text-on-surface-variant mb-3 uppercase tracking-wider">Voice Stress Analysis</span>
-          <div className="w-full h-2 bg-surface-variant/50 rounded-full overflow-hidden mb-3">
-            <div className="h-full bg-earth-accent opacity-70 w-3/4 rounded-full transition-all duration-1000 ease-out"></div>
+        {/* Live Incidents Feed */}
+        <section className="flex flex-col gap-4 mt-2 flex-1">
+          <div className="flex justify-between items-center mb-1">
+            <h2 className="font-label-sm text-on-surface-variant uppercase tracking-wider">Live Incidents Queue</h2>
+            <span className="bg-error-container text-on-error-container px-2 py-0.5 rounded-full text-xs font-bold">{incidents.length} Active</span>
           </div>
-          <span className="font-label-sm text-label-sm text-earth-accent mt-1 flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-earth-accent animate-pulse-slow"></span> Elevated Arousal Detected</span>
-        </div>
-
-        {/* Binary Triage Questioning */}
-        <section className="flex flex-col gap-5 mt-2 flex-1">
-          <h2 className="font-headline-lg-mobile text-headline-lg-mobile text-center text-primary mb-1 drop-shadow-sm">Are you in immediate danger?</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <button className="h-[140px] w-full bg-surface/50 backdrop-blur-lg border border-outline-variant/40 hover:bg-surface/70 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md">
-              <span className="material-symbols-outlined text-sage-primary" style={{ fontVariationSettings: "'FILL' 1", fontSize: "48px" }}>check_circle</span>
-              <span className="font-display-lg text-display-lg text-sage-primary">YES</span>
-            </button>
-            <button className="h-[140px] w-full bg-surface/50 backdrop-blur-lg border border-outline-variant/40 hover:bg-surface/70 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md">
-              <span className="material-symbols-outlined text-outline" style={{ fontVariationSettings: "'FILL' 0", fontSize: "48px" }}>cancel</span>
-              <span className="font-display-lg text-display-lg text-outline">NO</span>
-            </button>
-          </div>
-        </section>
-
-        {/* Incident Categories */}
-        <section className="mt-4 flex-1">
-          <h2 className="font-label-sm text-label-sm text-on-surface-variant text-center mb-5 uppercase tracking-wider">Select Incident Type</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <button className="h-[140px] w-full bg-surface/50 backdrop-blur-lg border border-outline-variant/40 hover:bg-surface/70 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md">
-              <span className="material-symbols-outlined text-sage-primary" style={{ fontVariationSettings: "'FILL' 0, 'wght' 200", fontSize: "48px" }}>mode_heat</span>
-              <span className="font-label-sm text-sage-primary uppercase tracking-wider">Fire</span>
-            </button>
-            <button className="h-[140px] w-full bg-surface/50 backdrop-blur-lg border border-outline-variant/40 hover:bg-surface/70 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md">
-              <span className="material-symbols-outlined text-sage-primary" style={{ fontVariationSettings: "'FILL' 0, 'wght' 200", fontSize: "48px" }}>ecg_heart</span>
-              <span className="font-label-sm text-sage-primary uppercase tracking-wider">Medical</span>
-            </button>
-            <button className="h-[140px] w-full bg-surface/50 backdrop-blur-lg border border-outline-variant/40 hover:bg-surface/70 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md">
-              <span className="material-symbols-outlined text-sage-primary" style={{ fontVariationSettings: "'FILL' 0, 'wght' 200", fontSize: "48px" }}>water_drop</span>
-              <span className="font-label-sm text-sage-primary uppercase tracking-wider">Flood</span>
-            </button>
-            <button className="h-[140px] w-full bg-surface/50 backdrop-blur-lg border border-outline-variant/40 hover:bg-surface/70 active:scale-95 transition-all flex flex-col items-center justify-center gap-3 rounded-xl shadow-sm hover:shadow-md">
-              <span className="material-symbols-outlined text-sage-primary" style={{ fontVariationSettings: "'FILL' 0, 'wght' 200", fontSize: "48px" }}>shield</span>
-              <span className="font-label-sm text-sage-primary uppercase tracking-wider">Security</span>
-            </button>
-          </div>
+          
+          {incidents.length === 0 ? (
+            <div className="bg-surface-container-low border border-outline-variant/30 rounded-xl p-8 text-center text-on-surface-variant">
+              No active incidents in the database.
+            </div>
+          ) : (
+            incidents.map((incident) => (
+              <div key={incident.id} className="bg-surface/80 backdrop-blur-md rounded-xl p-5 shadow-sm border border-outline-variant/30 flex flex-col gap-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex items-center gap-2">
+                    <span className={`w-3 h-3 rounded-full ${incident.urgencyScore >= 80 ? 'bg-error animate-pulse' : incident.urgencyScore >= 50 ? 'bg-earth-accent' : 'bg-sage-primary'}`}></span>
+                    <span className="font-bold text-on-surface">Score: {incident.urgencyScore}</span>
+                  </div>
+                  <span className="text-xs bg-surface-variant text-on-surface-variant px-2 py-1 rounded-md">{incident.status || 'Received'}</span>
+                </div>
+                
+                <p className="text-on-surface font-body-md line-clamp-2">{incident.description}</p>
+                
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {incident.aiStructuredData?.hazards?.map((h: string, i: number) => (
+                    <span key={i} className="text-[10px] uppercase bg-error/10 text-error px-2 py-0.5 rounded-sm border border-error/20">{h}</span>
+                  ))}
+                  {incident.aiStructuredData?.vulnerabilities?.map((v: string, i: number) => (
+                    <span key={i} className="text-[10px] uppercase bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-sm border border-secondary/20">{v}</span>
+                  ))}
+                  {incident.aiStructuredData?.requiredCapabilities?.map((c: string, i: number) => (
+                    <span key={i} className="text-[10px] uppercase bg-primary-fixed text-on-primary-fixed-variant px-2 py-0.5 rounded-sm border border-primary/20">{c}</span>
+                  ))}
+                </div>
+                
+                {incident.isMedical && (
+                  <div className="text-xs text-error font-bold flex items-center gap-1 mt-1">
+                    <span className="material-symbols-outlined text-[16px]">medical_services</span> Medical Attention Required
+                  </div>
+                )}
+                
+                <div className="mt-2 pt-3 border-t border-outline-variant/20 flex justify-end">
+                  <button className="text-primary font-label-sm uppercase tracking-wider hover:bg-primary/10 px-4 py-2 rounded-lg transition-colors">
+                    Dispatch Team
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
         </section>
       </main>
     </div>
