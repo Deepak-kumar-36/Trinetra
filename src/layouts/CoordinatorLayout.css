@@ -1,0 +1,16 @@
+.coordinator-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--background);
+}
+
+.coordinator-layout .layout-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 72px; /* Space for Nav */
+}
+
+.coordinator-nav .nav-item {
+  font-size: 11px; /* Slightly smaller to fit 5 items */
+}

@@ -1,0 +1,49 @@
+.trinetra-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trinetra-input-wrapper.full-width {
+  width: 100%;
+}
+
+.trinetra-input-label {
+  font-family: var(--font-family-body);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.trinetra-input {
+  background-color: var(--surface-bright);
+  color: var(--on-surface);
+  border: 2px solid var(--outline);
+  border-radius: var(--radius);
+  padding: 16px;
+  font-size: 18px;
+  font-family: var(--font-family-body);
+  transition: all 0.2s ease;
+  min-height: 56px;
+}
+
+.trinetra-input:focus {
+  outline: none;
+  border-color: var(--primary-container); /* Safety Orange */
+  font-weight: 700;
+}
+
+.trinetra-input::placeholder {
+  color: var(--on-surface-variant);
+  font-weight: 400;
+}
+
+.has-error .trinetra-input {
+  border-color: var(--error);
+}
+
+.trinetra-input-error {
+  color: var(--error);
+  font-size: 14px;
+  font-weight: 700;
+}

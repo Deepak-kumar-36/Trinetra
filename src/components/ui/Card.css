@@ -1,0 +1,52 @@
+.trinetra-card {
+  background-color: var(--surface-container-high); /* #2a2a2a Surface Gray */
+  border: 2px solid var(--outline-variant);
+  border-radius: var(--radius); /* 0.25rem Soft */
+  position: relative;
+  overflow: hidden;
+  display: flex;
+}
+
+.trinetra-card.clickable {
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+}
+
+.trinetra-card.clickable:hover {
+  border-color: var(--primary-container);
+}
+
+.trinetra-card.variant-elevated {
+  background-color: var(--surface-bright);
+}
+
+/* Hazard Card variant */
+.trinetra-card.variant-hazard {
+  /* Features a 12px vertical warning bar on left edge */
+  padding-left: 12px;
+}
+
+.hazard-bar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 12px;
+}
+
+.trinetra-card.hazard-danger .hazard-bar {
+  background-color: #FF3B30; /* Critical Red */
+}
+
+.trinetra-card.hazard-caution .hazard-bar {
+  background-color: var(--primary-container); /* Safety Orange */
+}
+
+.trinetra-card.hazard-secure .hazard-bar {
+  background-color: var(--secondary-container); /* Electric Cyan */
+}
+
+.card-content {
+  padding: 24px;
+  width: 100%;
+}

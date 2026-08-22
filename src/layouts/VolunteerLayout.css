@@ -1,0 +1,14 @@
+.volunteer-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--background);
+}
+
+.volunteer-layout .layout-content {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 72px; /* Space for Nav */
+}
+
+/* Share same bottom nav classes as Citizen, but without FAB padding */

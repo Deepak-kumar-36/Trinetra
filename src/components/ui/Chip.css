@@ -1,0 +1,43 @@
+.trinetra-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px; /* Large 40px height as per design */
+  padding: 0 16px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-family-body);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.trinetra-chip.variant-danger {
+  background-color: #FF3B30; /* Critical Red */
+  color: #ffffff;
+}
+
+.trinetra-chip.variant-secure {
+  background-color: var(--secondary-container); /* Electric Cyan */
+  color: var(--on-secondary-container);
+}
+
+.trinetra-chip.variant-caution {
+  background-color: var(--primary-container); /* Safety Orange */
+  color: var(--background);
+}
+
+.trinetra-chip.variant-neutral {
+  background-color: var(--surface-bright);
+  color: var(--on-surface);
+  border: 1px solid var(--outline);
+}
+
+.chip-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chip-icon svg {
+  width: 18px;
+  height: 18px;
+}
