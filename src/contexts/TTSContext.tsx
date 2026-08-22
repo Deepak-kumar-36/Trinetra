@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { useLanguage } from './LanguageContext';
 
 interface TTSContextType {
   isTTSEnabled: boolean;
@@ -15,6 +16,8 @@ const TTSContext = createContext<TTSContextType>({
 export const useTTS = () => useContext(TTSContext);
 
 export const TTSProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { currentLanguage } = useLanguage();
+  
   const [isTTSEnabled, setIsTTSEnabled] = useState(() => {
     // Check local storage for preference
     const saved = localStorage.getItem('trinetra_tts_enabled');
@@ -39,6 +42,7 @@ export const TTSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const utterance = new SpeechSynthesisUtterance("Screen reader mode enabled");
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
+        utterance.lang = currentLanguage.code;
         synthesis.speak(utterance);
       } else if (!next && synthesis) {
         synthesis.cancel(); // Stop speaking if turned off
@@ -46,7 +50,7 @@ export const TTSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       return next;
     });
-  }, [synthesis]);
+  }, [synthesis, currentLanguage.code]);
 
   const speak = useCallback((text: string) => {
     if (!isTTSEnabled || !synthesis || !text.trim()) return;
@@ -58,9 +62,10 @@ export const TTSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
+    utterance.lang = currentLanguage.code; // Apply selected language
     
     synthesis.speak(utterance);
-  }, [isTTSEnabled, synthesis]);
+  }, [isTTSEnabled, synthesis, currentLanguage.code]);
 
   // Global click listener for "Narrator" mode
   useEffect(() => {

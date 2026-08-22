@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { DistressDetectionProvider, useDistressDetection } from '../contexts/DistressDetectionContext';
 import { useTTS } from '../contexts/TTSContext';
+import { useLanguage, SUPPORTED_LANGUAGES } from '../contexts/LanguageContext';
 
 const CitizenLayoutInner: React.FC = () => {
   const navigate = useNavigate();
@@ -9,6 +10,7 @@ const CitizenLayoutInner: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { enabled, setEnabled } = useDistressDetection();
   const { isTTSEnabled, toggleTTS } = useTTS();
+  const { currentLanguage, setLanguage } = useLanguage();
 
   const isReport = location.pathname.includes('/report');
 
@@ -35,6 +37,26 @@ const CitizenLayoutInner: React.FC = () => {
           </h1>
           
           <div className="flex items-center gap-1">
+            <div className="relative">
+              <select
+                value={currentLanguage.code}
+                onChange={(e) => setLanguage(e.target.value)}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                title="Select Language"
+              >
+                {SUPPORTED_LANGUAGES.map(lang => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.nativeName} ({lang.name})
+                  </option>
+                ))}
+              </select>
+              <button 
+                className="p-2 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all duration-300 pointer-events-none"
+              >
+                <span className="material-symbols-outlined text-[22px]">translate</span>
+              </button>
+            </div>
+
             <button 
               onClick={toggleTTS}
               className={`p-2 rounded-full flex items-center justify-center transition-all duration-300 ${

@@ -30,19 +30,21 @@ import { CoordinatorMap } from './pages/Coordinator/CoordinatorMap';
 import { CoordinatorMissions } from './pages/Coordinator/CoordinatorMissions';
 import { CoordinatorResources } from './pages/Coordinator/CoordinatorResources';
 import { TTSProvider } from './contexts/TTSContext';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 function App() {
   return (
     <AuthProvider>
-      <TTSProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Splash />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/role-selection" element={<RoleSelection />} />
+      <LanguageProvider>
+        <TTSProvider>
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Splash />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/role-selection" element={<RoleSelection />} />
 
-          {/* Citizen Flow */}
-          <Route path="/citizen" element={<CitizenLayout />}>
+            {/* Citizen Flow */}
+            <Route path="/citizen" element={<CitizenLayout />}>
             <Route index element={<CitizenHome />} />
             <Route path="requests" element={<CitizenRequests />} />
             <Route path="nearby" element={<CitizenNearby />} />
