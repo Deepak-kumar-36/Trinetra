@@ -14,8 +14,8 @@ export const RoleSelection: React.FC = () => {
         
         {/* Header */}
         <div className="mb-12 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-md pulse-border">
-            <span className="material-symbols-outlined text-white text-3xl">shield_person</span>
+          <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-6 shadow-md overflow-hidden bg-surface p-1 pulse-border">
+            <img src="/logo.png" alt="triNETRA Logo" className="w-full h-full object-contain rounded-xl" />
           </div>
           <h1 className="font-headline-lg text-on-surface mb-2 tracking-tight">Select Protocol</h1>
           <p className="font-body-md text-on-surface-variant">Identify your role to access the correct operational dashboard.</p>
