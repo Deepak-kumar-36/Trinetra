@@ -195,52 +195,61 @@ export const CoordinatorLayout: React.FC = () => {
         </div>
       )}
       {/* Voice SOS Command Center Alert */}
-      {voiceAlert && (
-        <div className="fixed inset-0 z-[9999] bg-black/85 flex flex-col items-center justify-center p-6 animate-fade-in backdrop-blur-md">
-          <div className="w-full max-w-lg bg-surface-container-lowest rounded-[2rem] p-8 shadow-2xl flex flex-col items-center text-center border-2 border-error">
+      {voiceAlert && (() => {
+        let parsedTranscript: any = {};
+        try {
+          parsedTranscript = JSON.parse(voiceAlert.raw_transcript || '{}');
+        } catch (e) {}
+        
+        const isPhotoReport = parsedTranscript.type === 'photo_report';
+        const triggerDetail = parsedTranscript.url || parsedTranscript.detail || '';
+
+        return (
+          <div className="fixed inset-0 z-[9999] bg-black/85 flex flex-col items-center justify-center p-6 animate-fade-in backdrop-blur-md">
+            <div className="w-full max-w-lg bg-surface-container-lowest rounded-[2rem] p-8 shadow-2xl flex flex-col items-center text-center border-2 border-error">
             <div className="w-24 h-24 rounded-full bg-error flex items-center justify-center mb-6 animate-[pulse_1s_ease-in-out_infinite] shadow-[0_0_40px_rgba(200,50,50,0.5)]">
               <span className="material-symbols-outlined text-[56px] text-white">warning</span>
             </div>
             
-            <div className="bg-error text-white px-4 py-1.5 rounded-full font-label-sm uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="inline-block w-2 h-2 bg-white rounded-full animate-[pulse_0.5s_ease-in-out_infinite]"></span>
-              {voiceAlert.trigger_source === 'photo_report' ? 'Priority Alert — Photo Evidence' : 'Priority Alert — Voice Auto-Detection'}
-            </div>
-            
-            <h2 className="font-display-lg text-on-surface mb-2 text-2xl font-bold">
-              {voiceAlert.trigger_source === 'photo_report' ? 'Photo SOS Received' : 'Passive Distress Detected'}
-            </h2>
-            <p className="font-body-lg text-on-surface-variant mb-6">
-              {voiceAlert.trigger_source === 'photo_report'
-                ? "A citizen has uploaded photo evidence of an emergency from their location."
-                : voiceAlert.trigger_detail === 'shout_detected'
-                  ? "A citizen's device detected a sustained loud noise (shout). No manual confirmation was received — treat as potential emergency."
-                  : "A citizen's device detected a distress keyword. No manual confirmation was received — treat as potential emergency."}
-            </p>
+              <div className="bg-error text-white px-4 py-1.5 rounded-full font-label-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+                <span className="inline-block w-2 h-2 bg-white rounded-full animate-[pulse_0.5s_ease-in-out_infinite]"></span>
+                {isPhotoReport ? 'Priority Alert — Photo Evidence' : 'Priority Alert — Voice Auto-Detection'}
+              </div>
+              
+              <h2 className="font-display-lg text-on-surface mb-2 text-2xl font-bold">
+                {isPhotoReport ? 'Photo SOS Received' : 'Passive Distress Detected'}
+              </h2>
+              <p className="font-body-lg text-on-surface-variant mb-6">
+                {isPhotoReport
+                  ? "A citizen has uploaded photo evidence of an emergency from their location."
+                  : triggerDetail === 'shout_detected'
+                    ? "A citizen's device detected a sustained loud noise (shout). No manual confirmation was received — treat as potential emergency."
+                    : "A citizen's device detected a distress keyword. No manual confirmation was received — treat as potential emergency."}
+              </p>
             
             <div className="bg-surface-container rounded-xl p-5 w-full mb-6 border border-surface-variant">
               <div className="grid grid-cols-2 gap-4 text-left">
-                {voiceAlert.trigger_source === 'photo_report' ? (
-                  <div className="col-span-2 mb-2">
-                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-2 font-bold">Photo Evidence</p>
-                    <div className="w-full h-48 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-outline-variant">
-                      {voiceAlert.trigger_detail && (voiceAlert.trigger_detail.startsWith('http') || voiceAlert.trigger_detail.startsWith('data:')) ? (
-                        <img src={voiceAlert.trigger_detail} alt="SOS Evidence" className="w-full h-full object-cover" />
-                      ) : (
-                        <span className="material-symbols-outlined text-surface-variant text-[48px]">broken_image</span>
-                      )}
+                  {isPhotoReport ? (
+                    <div className="col-span-2 mb-2">
+                      <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-2 font-bold">Photo Evidence</p>
+                      <div className="w-full h-48 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-outline-variant">
+                        {triggerDetail && (triggerDetail.startsWith('http') || triggerDetail.startsWith('data:')) ? (
+                          <img src={triggerDetail} alt="SOS Evidence" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="material-symbols-outlined text-surface-variant text-[48px]">broken_image</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div>
-                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">
-                      {voiceAlert.trigger_detail === 'shout_detected' ? 'Detection (Shout)' : 'Detection (Keyword)'}
-                    </p>
-                    <p className="font-headline-lg-mobile text-error">
-                      {voiceAlert.trigger_detail === 'shout_detected' ? 'Sustained Loud Noise' : voiceAlert.trigger_detail || voiceAlert.title}
-                    </p>
-                  </div>
-                )}
+                  ) : (
+                    <div>
+                      <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">
+                        {triggerDetail === 'shout_detected' ? 'Detection (Shout)' : 'Detection (Keyword)'}
+                      </p>
+                      <p className="font-headline-lg-mobile text-error">
+                        {triggerDetail === 'shout_detected' ? 'Sustained Loud Noise' : triggerDetail || voiceAlert.title || voiceAlert.description}
+                      </p>
+                    </div>
+                  )}
                 <div>
                   <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Coordinates</p>
                   <p className="font-body-md text-on-surface font-mono">{voiceAlert.pos ? `${voiceAlert.pos[0].toFixed(4)}, ${voiceAlert.pos[1].toFixed(4)}` : 'N/A'}</p>
@@ -249,28 +258,29 @@ export const CoordinatorLayout: React.FC = () => {
                   <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Severity</p>
                   <p className="font-body-md text-error font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">priority_high</span>{voiceAlert.urgency_band || voiceAlert.severity || 'Critical'}</p>
                 </div>
-                <div>
-                  <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Source</p>
-                  <p className="font-body-md text-amber-600 font-bold flex items-center gap-1">
-                    <span className="material-symbols-outlined text-[16px]">
-                      {voiceAlert.trigger_source === 'photo_report' ? 'photo_camera' : 'memory'}
-                    </span>
-                    {voiceAlert.trigger_source === 'photo_report' ? 'Citizen App' : 'Unconfirmed Auto'}
-                  </p>
+                  <div>
+                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Source</p>
+                    <p className="font-body-md text-amber-600 font-bold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[16px]">
+                        {isPhotoReport ? 'photo_camera' : 'memory'}
+                      </span>
+                      {isPhotoReport ? 'Citizen App' : 'Unconfirmed Auto'}
+                    </p>
+                  </div>
                 </div>
               </div>
+              
+              <button 
+                onClick={() => setVoiceAlert(null)}
+                className="w-full h-14 bg-error text-white rounded-xl font-bold uppercase tracking-wider hover:bg-error/90 transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95"
+              >
+                <span className="material-symbols-outlined">verified</span>
+                Acknowledge & Deploy Response
+              </button>
             </div>
-            
-            <button 
-              onClick={() => setVoiceAlert(null)}
-              className="w-full h-14 bg-error text-white rounded-xl font-bold uppercase tracking-wider hover:bg-error/90 transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95"
-            >
-              <span className="material-symbols-outlined">verified</span>
-              Acknowledge & Deploy Response
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 };

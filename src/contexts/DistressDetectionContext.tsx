@@ -353,13 +353,13 @@ export const DistressDetectionProvider: React.FC<{
 
           const { data, error } = await supabase.from('incidents').insert({
             reporter_id: userId,
-            title: 'Voice SOS — Distress Keyword Detected',
+            description: 'Voice SOS — Distress Keyword Detected',
+            status: 'reported',
+            category: 'general',
+            urgency_score: 100,
             urgency_band: 'critical',
-            trigger_source: 'voice_keyword_auto',
-            trigger_confirmed: opts.confirmed, // null on timeout, true only if explicitly confirmed
-            trigger_detail: triggerDetail === '__shout__' ? 'shout_detected' : triggerDetail, // schema note below
-            location: { lat, lon },
-            // audio_path: audioPath, // Schema missing column 'audio_path'
+            raw_transcript: JSON.stringify({ type: 'voice_keyword_auto', detail: triggerDetail === '__shout__' ? 'shout_detected' : triggerDetail }),
+            location: `POINT(${lon} ${lat})`,
           }).select().single();
 
           if (error) throw error;

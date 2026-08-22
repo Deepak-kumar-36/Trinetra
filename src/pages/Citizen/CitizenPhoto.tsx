@@ -75,12 +75,13 @@ export const CitizenPhoto = () => {
         .from('incidents')
         .insert({
           reporter_id: user.id,
-          title: 'Photo Distress Report',
+          description: 'Photo Distress Report',
+          status: 'reported',
+          category: 'general',
+          urgency_score: 100,
           urgency_band: 'critical',
-          trigger_source: 'photo_report',
-          trigger_confirmed: true, // User intentionally sent a photo
-          trigger_detail: base64DataUrl, // Storing the compressed Base64 image directly!
-          location: { lat, lon },
+          raw_transcript: JSON.stringify({ type: 'photo_report', url: base64DataUrl }),
+          location: `POINT(${lon} ${lat})`,
         })
         .select()
         .single();
