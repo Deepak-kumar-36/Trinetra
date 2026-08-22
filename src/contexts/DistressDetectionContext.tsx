@@ -345,7 +345,7 @@ export const DistressDetectionProvider: React.FC<{
           // let audioPath: string | null = null;
           if (audioBlob) {
             const path = `voice-sos/${userId}/${Date.now()}.webm`;
-            const { error: uploadError } = await supabase.storage
+            await supabase.storage
               .from('incident-audio')
               .upload(path, audioBlob);
             // if (!uploadError) audioPath = path;
