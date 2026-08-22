@@ -25,7 +25,7 @@ export const CoordinatorOperations: React.FC = () => {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'incidents' },
-        (payload) => {
+        () => {
           fetchIncidents(); // re-fetch on change
         }
       )

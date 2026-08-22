@@ -1,4 +1,11 @@
-import type { ExtractedIncidentData } from './aiExtraction';
+export interface ExtractedIncidentData {
+  peopleCount: number;
+  isMedical: boolean;
+  severity: 'Critical' | 'High' | 'Medium' | 'Low';
+  vulnerabilities: string[];
+  hazards: string[];
+  requiredCapabilities: string[];
+}
 
 export interface Responder {
   id: string;
