@@ -1,8 +1,7 @@
 import React from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useLocation } from 'react-router-dom';
 
 export const VolunteerLayout: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
 
   const isMap = location.pathname.includes('/map');

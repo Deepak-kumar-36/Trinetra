@@ -7,7 +7,9 @@ import { CitizenLayout } from './layouts/CitizenLayout';
 import { VolunteerLayout } from './layouts/VolunteerLayout';
 import { CoordinatorLayout } from './layouts/CoordinatorLayout';
 
+import { AuthProvider } from './contexts/AuthContext';
 import { Splash } from './pages/Splash';
+import { Login } from './pages/Login';
 import { RoleSelection } from './pages/RoleSelection';
 import { CitizenHome } from './pages/Citizen/CitizenHome';
 import { ReportEmergency } from './pages/Citizen/ReportEmergency';
@@ -29,10 +31,12 @@ import { CoordinatorResources } from './pages/Coordinator/CoordinatorResources';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Splash />} />
-        <Route path="/role-selection" element={<RoleSelection />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Splash />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/role-selection" element={<RoleSelection />} />
 
         {/* Citizen Flow */}
         <Route path="/citizen" element={<CitizenLayout />}>
@@ -61,8 +65,9 @@ function App() {
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

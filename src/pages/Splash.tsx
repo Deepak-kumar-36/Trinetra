@@ -7,7 +7,7 @@ export const Splash: React.FC = () => {
   useEffect(() => {
     // Simulate initialization and then redirect to role selection
     const timer = setTimeout(() => {
-      navigate('/role-selection');
+      navigate('/login');
     }, 3000);
     return () => clearTimeout(timer);
   }, [navigate]);
