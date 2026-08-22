@@ -78,16 +78,15 @@ export const VolunteerHome: React.FC = () => {
                   <div className="bg-surface-container-lowest shadow-[0_20px_50px_-12px_rgba(74,93,78,0.25)] border border-sage-primary/20 rounded-2xl p-6 relative overflow-hidden group">
                     <div className="absolute top-0 left-0 bottom-0 w-2 bg-gradient-to-b from-sage-primary to-primary"></div>
                     <div className="relative z-10">
-                      <div className="absolute top-4 right-4 bg-sage-primary/90 backdrop-blur-md text-white px-3 py-1.5 rounded-full font-label-sm flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[16px]">check_circle</span> Perfect Match
-                      </div>
-
-                      <div className="flex items-start gap-5 mb-5 mt-2">
-                        <div className="pt-1">
+                      <div className="flex justify-between items-start mb-5 mt-2">
+                        <div className="pt-1 pr-4">
                           <h4 className="font-bold text-xl text-primary">Action Required</h4>
                           <p className="text-sm text-on-surface-variant flex items-center gap-1 mt-1 font-semibold">
                             <span className="material-symbols-outlined text-[16px] text-earth-accent">schedule</span> ETA to scene: 12 min
                           </p>
+                        </div>
+                        <div className="bg-sage-primary text-white px-3 py-1.5 rounded-full font-label-sm flex items-center gap-1 shrink-0 shadow-md">
+                          <span className="material-symbols-outlined text-[16px]">check_circle</span> Perfect Match
                         </div>
                       </div>
 

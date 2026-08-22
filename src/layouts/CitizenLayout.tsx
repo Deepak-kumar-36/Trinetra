@@ -117,29 +117,29 @@ export const CitizenLayout: React.FC = () => {
               </button>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-              <Link to="/citizen/settings" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 m-0 list-none [&_a]:no-underline">
+              <Link to="/citizen/settings" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
                 <span className="material-symbols-outlined text-sage-primary text-[24px]">settings</span>
                 <span className="font-label-lg">Settings</span>
               </Link>
-              <Link to="/citizen/contacts" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+              <Link to="/citizen/contacts" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
                 <span className="material-symbols-outlined text-sage-primary text-[24px]">contacts</span>
                 <span className="font-label-lg">Emergency Contacts</span>
               </Link>
-              <Link to="/citizen/history" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+              <Link to="/citizen/history" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
                 <span className="material-symbols-outlined text-sage-primary text-[24px]">history</span>
                 <span className="font-label-lg">Incident History</span>
               </Link>
               
               <div className="my-4 border-t border-outline-variant/30"></div>
               
-              <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+              <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
                 <span className="material-symbols-outlined text-primary text-[24px]">swap_horiz</span>
                 <span className="font-label-lg">Switch Role</span>
               </Link>
               
               <div className="mt-auto pt-4">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95">
+                <Link to="/login" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95 no-underline">
                   <span className="material-symbols-outlined text-[24px]">logout</span>
                   <span className="font-label-lg font-bold">Sign Out to Login Page</span>
                 </Link>

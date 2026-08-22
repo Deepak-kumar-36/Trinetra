@@ -1,8 +1,9 @@
-import React from 'react';
-import { Outlet, NavLink, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
 
 export const CoordinatorLayout: React.FC = () => {
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isMap = location.pathname.includes('/map');
 
@@ -14,6 +15,7 @@ export const CoordinatorLayout: React.FC = () => {
         <header className="fixed top-0 w-full z-50 bg-stone-bg/80 backdrop-blur-md shadow-sm">
           <div className="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop">
             <button 
+              onClick={() => setIsMenuOpen(true)}
               className="text-sage-primary hover:bg-surface-container-high transition-colors active:scale-95 duration-200 p-2 rounded-full flex items-center justify-center"
             >
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>
@@ -97,6 +99,41 @@ export const CoordinatorLayout: React.FC = () => {
           </NavLink>
           
         </nav>
+      )}
+      {/* Side Menu Drawer */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-[100] flex">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in cursor-pointer" onClick={() => setIsMenuOpen(false)}></div>
+          <div className="relative w-[75%] max-w-[320px] bg-stone-bg h-full shadow-[24px_0_48px_rgba(0,0,0,0.3)] animate-slide-in-right flex flex-col">
+            <div className="p-6 h-20 border-b border-outline-variant/30 flex justify-between items-center bg-surface-container-lowest">
+              <h2 className="font-headline-sm text-on-surface tracking-tight">Menu</h2>
+              <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full hover:bg-surface-container-highest transition-colors text-on-surface-variant active:scale-95">
+                <span className="material-symbols-outlined text-[24px]">close</span>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 m-0 list-none [&_a]:no-underline">
+              <Link to="/coordinator/settings" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">settings</span>
+                <span className="font-label-lg">Settings</span>
+              </Link>
+              <Link to="/coordinator/history" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">history</span>
+                <span className="font-label-lg">Command History</span>
+              </Link>
+              <div className="my-4 border-t border-outline-variant/30"></div>
+              <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
+                <span className="material-symbols-outlined text-primary text-[24px]">swap_horiz</span>
+                <span className="font-label-lg">Switch Role</span>
+              </Link>
+              <div className="mt-auto pt-4">
+                <Link to="/login" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95 no-underline">
+                  <span className="material-symbols-outlined text-[24px]">logout</span>
+                  <span className="font-label-lg font-bold">Sign Out to Login Page</span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
