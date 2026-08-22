@@ -2,10 +2,51 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
+import { supabase } from '../../lib/supabase';
+import { useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { generateUUID } from '../../lib/utils';
+import { calculateUrgencyScore } from '../../lib/dispatchEngine';
+import { useVoiceDistress } from '../../hooks/useVoiceDistress';
 
 export const CitizenHome: React.FC = () => {
+  const [silentSosEnabled, setSilentSosEnabled] = useState(true);
+  const { isListening, countdown, cancelCountdown } = useVoiceDistress(silentSosEnabled);
+  const { user } = useAuth();
   const [sosActive, setSosActive] = useState(false);
   const [isSosTriggered, setIsSosTriggered] = useState(false);
+  
+  // Realtime subscription for Coordinator feedback
+  const [dispatchAlert, setDispatchAlert] = useState<{message: string} | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const userId = generateUUID(user.uid);
+    
+    // Subscribe to notifications where user_id = my id
+    const channel = supabase
+      .channel('citizen-notifications')
+      .on(
+        'postgres_changes',
+        { 
+          event: 'INSERT', 
+          schema: 'public', 
+          table: 'notifications',
+          filter: `user_id=eq.${userId}` 
+        },
+        (payload) => {
+          setDispatchAlert({
+            message: payload.new.message
+          });
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
   const [sosTimer, setSosTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<string | null>(null);
   const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
@@ -17,6 +58,7 @@ export const CitizenHome: React.FC = () => {
     const timer = setTimeout(() => {
       setIsSosTriggered(true);
       setSosActive(false);
+      navigate('/citizen/report');
     }, 3000);
     setSosTimer(timer);
   };
@@ -38,7 +80,7 @@ export const CitizenHome: React.FC = () => {
     setSelectedIncident(type);
   };
 
-  const handleSubOptionSelect = (option: string, category: string) => {
+  const handleSubOptionSelect = async (option: string, category: string) => {
     let authority = 'Emergency Services';
     if (category === 'Fire') authority = 'Local Fire Department';
     else if (category === 'Medical') authority = 'EMS & Nearest Hospital';
@@ -49,9 +91,48 @@ export const CitizenHome: React.FC = () => {
     // Broadcast GPS location to Coordinator Map via localStorage
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
+          
+          if (user) {
+            const reporter_id = generateUUID(user.uid);
+            
+            // Ensure user exists
+            await supabase.from('users').upsert([{
+              id: reporter_id,
+              role: 'citizen',
+              full_name: user.displayName || user.email || 'Citizen'
+            }], { onConflict: 'id' });
+
+            // Determine basic features for engine based on option
+            const isMedical = category === 'Medical' || option.toLowerCase().includes('injury');
+            const hazards = category === 'Fire' ? ['fire'] : category === 'Flood' ? ['flood'] : [];
+            
+            const { score, reasoning } = calculateUrgencyScore({
+              peopleCount: 1,
+              isMedical,
+              severity: 'High',
+              vulnerabilities: [],
+              hazards,
+              requiredCapabilities: []
+            });
+
+            // Insert rapid incident
+            await supabase.from('incidents').insert([{
+              reporter_id,
+              status: 'reported',
+              category: category.toLowerCase(),
+              raw_transcript: `Rapid Report: ${option} (${category})`,
+              people_affected: 1,
+              hazards,
+              urgency_score: score,
+              urgency_band: score >= 80 ? 'critical' : score >= 50 ? 'high' : 'medium',
+              urgency_breakdown: reasoning,
+              location: `POINT(${lon} ${lat})`
+            }]);
+          }
+
           const newIncident = {
             id: Date.now(),
             pos: [lat, lon],
@@ -62,7 +143,44 @@ export const CitizenHome: React.FC = () => {
           localStorage.setItem('trinetra_live_incidents', JSON.stringify([...existing, newIncident]));
           window.dispatchEvent(new Event('storage'));
         },
-        (err) => console.warn("GPS failed", err),
+        async (err) => {
+          console.warn("GPS failed", err);
+          // Fallback to static location if GPS fails
+          if (user) {
+            const reporter_id = generateUUID(user.uid);
+            
+            await supabase.from('users').upsert([{
+              id: reporter_id,
+              role: 'citizen',
+              full_name: user.displayName || user.email || 'Citizen'
+            }], { onConflict: 'id' });
+
+            const isMedical = category === 'Medical' || option.toLowerCase().includes('injury');
+            const hazards = category === 'Fire' ? ['fire'] : category === 'Flood' ? ['flood'] : [];
+            
+            const { score, reasoning } = calculateUrgencyScore({
+              peopleCount: 1,
+              isMedical,
+              severity: 'High',
+              vulnerabilities: [],
+              hazards,
+              requiredCapabilities: []
+            });
+
+            await supabase.from('incidents').insert([{
+              reporter_id,
+              status: 'reported',
+              category: category.toLowerCase(),
+              raw_transcript: `Rapid Report: ${option} (${category})`,
+              people_affected: 1,
+              hazards,
+              urgency_score: score,
+              urgency_band: score >= 80 ? 'critical' : score >= 50 ? 'high' : 'medium',
+              urgency_breakdown: reasoning,
+              location: `POINT(77.2090 28.6139)`
+            }]);
+          }
+        },
         { enableHighAccuracy: true, timeout: 5000 }
       );
     }
@@ -120,6 +238,40 @@ export const CitizenHome: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col p-margin-mobile gap-section-gap overflow-y-auto max-w-[1440px] mx-auto w-full relative animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
+      {/* Voice Distress Countdown Overlay */}
+      {countdown !== null && (
+        <div className="fixed inset-0 z-[200] bg-error/95 flex flex-col items-center justify-center p-6 text-white animate-fade-in backdrop-blur-md">
+          <span className="material-symbols-outlined text-[80px] mb-4 animate-pulse">record_voice_over</span>
+          <h2 className="font-display-lg text-4xl font-bold mb-2 text-center">Voice Distress Detected</h2>
+          <p className="text-xl opacity-90 mb-8 text-center max-w-md">
+            Dispatching authorities in...
+          </p>
+          <div className="text-[120px] font-extrabold leading-none mb-12 drop-shadow-lg">
+            {countdown}
+          </div>
+          <button 
+            onClick={cancelCountdown}
+            className="bg-white/20 hover:bg-white/30 border-2 border-white/50 text-white rounded-full px-8 py-4 font-bold text-xl transition-all active:scale-95 flex items-center gap-2"
+          >
+            <span className="material-symbols-outlined">close</span> Cancel SOS
+          </button>
+        </div>
+      )}
+
+      {/* Top Bar with Silent SOS Toggle */}
+      <div className="flex justify-between items-center w-full mb-2">
+        <h1 className="font-display-md text-primary opacity-0">Emergency</h1> {/* Spacer for layout balance */}
+        <button 
+          onClick={() => setSilentSosEnabled(!silentSosEnabled)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold transition-all shadow-sm ${silentSosEnabled ? 'bg-error/10 border-error/30 text-error' : 'bg-surface border-outline-variant text-on-surface-variant'}`}
+        >
+          <span className={`material-symbols-outlined text-[18px] ${silentSosEnabled && isListening ? 'animate-pulse' : ''}`}>
+            {silentSosEnabled ? 'mic' : 'mic_off'}
+          </span>
+          {silentSosEnabled ? 'Silent SOS: Active' : 'Silent SOS: Off'}
+        </button>
+      </div>
+
       {/* Massive SOS Button */}
       <section className="w-full flex-grow-0 flex items-center justify-center min-h-[353px] md:min-h-[442px] relative mb-8 mt-4">
         {isSosTriggered && (
@@ -237,6 +389,27 @@ export const CitizenHome: React.FC = () => {
       >
         {renderIncidentOptions()}
       </Modal>
+
+      {/* Dispatch Alert Modal (Coordinator Response) */}
+      {dispatchAlert && (
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-surface border-t-8 border-t-primary rounded-3xl p-8 max-w-md w-full shadow-2xl animate-slide-in-up text-center">
+            <div className="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+              <span className="material-symbols-outlined text-[40px]">emergency_share</span>
+            </div>
+            <h2 className="font-display-lg text-3xl font-bold text-on-surface mb-4">Help is on the way!</h2>
+            <p className="text-lg text-on-surface-variant leading-relaxed mb-8">
+              {dispatchAlert.message}
+            </p>
+            <button 
+              onClick={() => setDispatchAlert(null)}
+              className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-md hover:bg-primary/90 transition-all active:scale-95 text-lg"
+            >
+              Acknowledge
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification for Authority Dispatch */}
       {activeNotification && (
