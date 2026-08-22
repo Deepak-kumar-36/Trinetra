@@ -22,23 +22,37 @@ export const ReportEmergency: React.FC = () => {
     setErrorMsg('');
     
     try {
+      // Get authenticated user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('You must be logged in to submit a report.');
+      }
+
       // 1. Extract structured data using Supabase Edge Function
       const { data: aiData, error: extractionError } = await supabase.functions.invoke('extract-incident', {
         body: { text: description }
       });
       
+      let finalAiData = aiData || {};
       if (extractionError) {
         console.warn("AI extraction failed, using basic fallback", extractionError);
-        throw new Error('Failed to analyze emergency details.');
+        // Fallback: manually construct basic data
+        finalAiData = {
+          peopleCount: peopleCount ? parseInt(peopleCount) : 1,
+          isMedical: isMedical,
+          vulnerabilities: [],
+          hazards: [],
+          requiredCapabilities: []
+        };
       }
       
       // Override with user explicit input if provided
-      const finalPeopleCount = peopleCount ? parseInt(peopleCount) : (aiData.peopleCount || 1);
-      const finalIsMedical = isMedical || aiData.isMedical;
+      const finalPeopleCount = peopleCount ? parseInt(peopleCount) : (finalAiData.peopleCount || 1);
+      const finalIsMedical = isMedical || finalAiData.isMedical;
       
       // 2. Calculate Urgency Score
       const { score, reasoning } = calculateUrgencyScore({
-        ...aiData,
+        ...finalAiData,
         peopleCount: finalPeopleCount,
         isMedical: finalIsMedical,
         severity: severity as any,
@@ -47,20 +61,23 @@ export const ReportEmergency: React.FC = () => {
       // 3. Save to Supabase
       const { error: insertError } = await supabase.from('incidents').insert([{
         description,
-        reportedSeverity: severity,
-        peopleCount: finalPeopleCount,
-        isMedical: finalIsMedical,
-        aiStructuredData: aiData,
-        urgencyScore: score,
-        urgencyReasoning: reasoning,
-        status: 'Received',
-        reporterId: 'guest-user',
-        location: { lat: 28.6139, lng: 77.2090 } // Mocked location (New Delhi)
+        reporter_id: user.id, // Fixed: Send the actual authenticated user UUID
+        status: 'reported', // Fixed: Use valid enum value 'reported' instead of 'Received'
+        category: 'general',
+        people_affected: finalPeopleCount,
+        vulnerabilities: finalAiData.vulnerabilities || [],
+        hazards: finalAiData.hazards || [],
+        required_capabilities: finalAiData.requiredCapabilities || [],
+        raw_transcript: description,
+        urgency_score: score,
+        urgency_band: score >= 80 ? 'critical' : score >= 50 ? 'high' : score >= 20 ? 'medium' : 'low',
+        urgency_breakdown: reasoning,
+        location: `POINT(77.2090 28.6139)` // Insert PostGIS point format
       }]);
       
       if (insertError) {
         console.error("Supabase insert failed:", insertError);
-        throw new Error('Failed to save to database.');
+        throw new Error('Failed to save to database. ' + insertError.message);
       }
 
       // 4. Redirect to tracking view
