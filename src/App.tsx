@@ -73,7 +73,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
-      </TTSProvider>
+        </TTSProvider>
+      </LanguageProvider>
     </AuthProvider>
   );
 }
