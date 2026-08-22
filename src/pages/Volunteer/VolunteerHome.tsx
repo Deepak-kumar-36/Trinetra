@@ -215,7 +215,6 @@ export const VolunteerHome: React.FC = () => {
       console.error("Failed to accept mission:", error);
     }
   };
->>>>>>> 2acd099b74d24c3ae46dcc3c35decce8cc3c18a2
 
   return (
     <div className="font-body-md antialiased min-h-screen flex flex-col mesh-bg relative pb-32">
