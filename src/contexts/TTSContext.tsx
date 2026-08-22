@@ -43,6 +43,16 @@ export const TTSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         utterance.rate = 1.0;
         utterance.pitch = 1.0;
         utterance.lang = currentLanguage.code;
+        
+        const voices = synthesis.getVoices();
+        if (voices.length > 0) {
+          const exactMatch = voices.find(v => v.lang === currentLanguage.code);
+          const shortCode = currentLanguage.code.split('-')[0];
+          const partialMatch = voices.find(v => v.lang.startsWith(shortCode));
+          const googleMatch = voices.find(v => v.lang.startsWith(shortCode) && v.name.includes('Google'));
+          utterance.voice = googleMatch || exactMatch || partialMatch || null;
+        }
+
         synthesis.speak(utterance);
       } else if (!next && synthesis) {
         synthesis.cancel(); // Stop speaking if turned off
@@ -63,6 +73,18 @@ export const TTSProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     utterance.rate = 1.0;
     utterance.pitch = 1.0;
     utterance.lang = currentLanguage.code; // Apply selected language
+
+    // Explicitly find the best matching voice pack to avoid the "gender swap only" bug
+    const voices = synthesis.getVoices();
+    if (voices.length > 0) {
+      const exactMatch = voices.find(v => v.lang === currentLanguage.code);
+      const shortCode = currentLanguage.code.split('-')[0];
+      const partialMatch = voices.find(v => v.lang.startsWith(shortCode));
+      const googleMatch = voices.find(v => v.lang.startsWith(shortCode) && v.name.includes('Google'));
+      
+      // Prefer Google's cloud voices if available, then exact, then partial
+      utterance.voice = googleMatch || exactMatch || partialMatch || null;
+    }
     
     synthesis.speak(utterance);
   }, [isTTSEnabled, synthesis, currentLanguage.code]);

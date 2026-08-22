@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 export interface Language {
   code: string;
@@ -24,7 +24,7 @@ interface LanguageContextType {
 const LanguageContext = createContext<LanguageContextType>({
   currentLanguage: SUPPORTED_LANGUAGES[0],
   setLanguage: () => {},
-  t: (key, defaultText) => defaultText,
+  t: (_key, defaultText) => defaultText,
 });
 
 export const useLanguage = () => useContext(LanguageContext);
@@ -44,6 +44,15 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (found) {
       setCurrentLanguageState(found);
       localStorage.setItem('trinetra_language', code);
+      
+      // Trigger Google Translate hidden dropdown
+      // The Google Translate widget expects the 2-letter code (e.g., 'hi' instead of 'hi-IN')
+      const shortCode = code === 'en-IN' ? 'en' : code.split('-')[0];
+      const gtCombo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+      if (gtCombo) {
+        gtCombo.value = shortCode;
+        gtCombo.dispatchEvent(new Event('change'));
+      }
     }
   };
 
