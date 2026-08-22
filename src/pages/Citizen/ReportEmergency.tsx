@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { calculateUrgencyScore } from '../../lib/dispatchEngine';
+import { useTTS } from '../../contexts/TTSContext';
 
 export const ReportEmergency: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ export const ReportEmergency: React.FC = () => {
   const [isMedical, setIsMedical] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const { speak } = useTTS();
 
   const handleSubmit = async () => {
     if (!description.trim()) {
@@ -60,7 +62,6 @@ export const ReportEmergency: React.FC = () => {
 
       // 3. Save to Supabase
       const { error: insertError } = await supabase.from('incidents').insert([{
-        description,
         reporter_id: user.id, // Fixed: Send the actual authenticated user UUID
         status: 'reported', // Fixed: Use valid enum value 'reported' instead of 'Received'
         category: 'general',
@@ -81,6 +82,7 @@ export const ReportEmergency: React.FC = () => {
       }
 
       // 4. Redirect to tracking view
+      speak("Emergency report submitted successfully. Help is on the way.");
       navigate('/citizen');
     } catch (error) {
       console.error("Submit failed:", error);

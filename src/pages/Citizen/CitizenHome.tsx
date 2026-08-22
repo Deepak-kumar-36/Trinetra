@@ -46,9 +46,30 @@ export const CitizenHome: React.FC = () => {
     else if (category === 'Flood') authority = 'Disaster Response Force';
     else if (category === 'Other') authority = 'General Emergency Services';
 
+    // Broadcast GPS location to Coordinator Map via localStorage
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const newIncident = {
+            id: Date.now(),
+            pos: [lat, lon],
+            title: option,
+            severity: category === 'Fire' || category === 'Medical' ? 'Critical' : 'High'
+          };
+          const existing = JSON.parse(localStorage.getItem('trinetra_live_incidents') || '[]');
+          localStorage.setItem('trinetra_live_incidents', JSON.stringify([...existing, newIncident]));
+          window.dispatchEvent(new Event('storage'));
+        },
+        (err) => console.warn("GPS failed", err),
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+
     setActiveNotification({
       title: 'Authorities Notified',
-      message: `${authority} has been informed about: ${option}. Stay calm, help is on the way.`
+      message: `${authority} has been informed about: ${option}. Live GPS tracked. Stay calm, help is on the way.`
     });
     setSelectedIncident(null);
 
