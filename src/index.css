@@ -2,8 +2,7 @@
 @config "../tailwind.config.js";
 
 @layer base {
-  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
-  @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
 
   body {
     @apply bg-background text-on-background font-body-lg min-h-screen antialiased selection:bg-primary-fixed selection:text-on-primary-fixed;
