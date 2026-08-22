@@ -16,11 +16,10 @@ import { CitizenRequests } from './pages/Citizen/CitizenRequests';
 import { CitizenNearby } from './pages/Citizen/CitizenNearby';
 import { CitizenProfile } from './pages/Citizen/CitizenProfile';
 
-// Volunteer Pages
-const VolunteerHome = () => <div className="placeholder-page">Volunteer Home</div>;
-const VolunteerMissions = () => <div className="placeholder-page">Missions</div>;
-const VolunteerMap = () => <div className="placeholder-page">Map</div>;
-const VolunteerProfile = () => <div className="placeholder-page">Profile</div>;
+import { VolunteerHome } from './pages/Volunteer/VolunteerHome';
+import { VolunteerMissions } from './pages/Volunteer/VolunteerMissions';
+import { VolunteerMap } from './pages/Volunteer/VolunteerMap';
+import { VolunteerProfile } from './pages/Volunteer/VolunteerProfile';
 
 // Coordinator Pages
 const CoordinatorOperations = () => <div className="placeholder-page">Operations Dashboard</div>;
