@@ -1,7 +1,16 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// Component to dynamically update the map center when position changes
+const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
+  const map = useMap();
+  useEffect(() => {
+    map.flyTo(center, map.getZoom());
+  }, [center, map]);
+  return null;
+};
 
 // Create custom icons matching the app's premium UI
 const createPulseIcon = (color: string, borderColor: string) => L.divIcon({
@@ -40,10 +49,32 @@ const suppliesIcon = L.divIcon({
 });
 
 export const CitizenNearby: React.FC = () => {
-  // Center on New Delhi
-  const citizenPosition: [number, number] = [28.6139, 77.2090];
+  // Default to New Delhi if GPS is not available/granted
+  const [citizenPosition, setCitizenPosition] = useState<[number, number]>([28.6139, 77.2090]);
+  const [isLocating, setIsLocating] = useState(true);
+  const [gpsError, setGpsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setCitizenPosition([position.coords.latitude, position.coords.longitude]);
+          setIsLocating(false);
+        },
+        (error) => {
+          console.warn("GPS Error:", error.message);
+          setGpsError(error.message);
+          setIsLocating(false);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    } else {
+      setGpsError("Geolocation not supported by this browser.");
+      setIsLocating(false);
+    }
+  }, []);
   
-  // Dummy data for shelters and supplies
+  // Dummy data for shelters and supplies (hardcoded near default New Delhi area for demo purposes)
   const shelters = [
     { id: 1, pos: [28.6180, 77.2030] as [number, number], name: "NDMC Relief Camp", capacity: "350 / 500", status: "Open" },
     { id: 2, pos: [28.6080, 77.2150] as [number, number], name: "Govt School Shelter", capacity: "120 / 200", status: "Filling Fast" },
@@ -58,12 +89,34 @@ export const CitizenNearby: React.FC = () => {
     <div className="flex-1 flex flex-col h-full relative overflow-hidden">
       
       {/* HUD Header Overlay */}
-      <div className="absolute top-0 w-full z-20 p-margin-mobile fade-in-up stagger-1 pointer-events-none">
-        <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-md border border-gray-100 flex flex-col gap-1 pointer-events-auto">
-          <h2 className="font-headline-lg-mobile text-charcoal-text m-0">Nearby Resources</h2>
-          <p className="text-xs text-gray-500 m-0">Locate safe shelters and emergency supplies in your area.</p>
+      <div className="absolute top-0 w-full z-[1000] p-margin-mobile fade-in-up stagger-1 pointer-events-none">
+        <div className="bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-md border border-gray-100 flex flex-col gap-1 pointer-events-auto">
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="font-headline-lg-mobile text-charcoal-text m-0">Nearby Resources</h2>
+              <p className="text-xs text-gray-500 m-0">Locate safe shelters and emergency supplies.</p>
+            </div>
+            
+            {/* GPS Status Indicator */}
+            {isLocating ? (
+              <div className="flex items-center gap-1.5 bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full border border-blue-100">
+                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Locating...</span>
+              </div>
+            ) : gpsError ? (
+              <div className="flex items-center gap-1.5 bg-orange-50 text-orange-600 px-2.5 py-1 rounded-full border border-orange-100">
+                <span className="material-symbols-outlined text-[14px]">location_disabled</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">GPS Off</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 bg-green-50 text-green-600 px-2.5 py-1 rounded-full border border-green-100">
+                <span className="material-symbols-outlined text-[14px]">my_location</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider">Live</span>
+              </div>
+            )}
+          </div>
           
-          <div className="flex gap-4 mt-2 pt-2 border-t border-gray-100">
+          <div className="flex gap-4 mt-3 pt-3 border-t border-gray-100">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
               <span className="text-xs font-medium text-gray-600">Shelters</span>
@@ -85,6 +138,7 @@ export const CitizenNearby: React.FC = () => {
             zoomControl={false}
             style={{ width: '100%', height: '100%' }}
           >
+            <MapUpdater center={citizenPosition} />
             <TileLayer
               url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
               subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
@@ -95,7 +149,7 @@ export const CitizenNearby: React.FC = () => {
               <Popup className="border-none rounded-xl overflow-hidden shadow-lg m-0">
                 <div className="p-2">
                   <h3 className="font-label-sm uppercase text-[#4CAF50] font-bold mb-1">Your Location</h3>
-                  <p className="text-xs text-gray-500 m-0">Accuracy: ± 4.2m</p>
+                  <p className="text-xs text-gray-500 m-0">Live GPS Coordinates</p>
                 </div>
               </Popup>
             </Marker>
