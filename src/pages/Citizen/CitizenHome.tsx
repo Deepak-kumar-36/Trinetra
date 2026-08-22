@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import { TriageProtocolModal } from './TriageProtocolModal';
 import { supabase } from '../../lib/supabase';
-import { useEffect } from 'react';
+
 import { useAuth } from '../../contexts/AuthContext';
 import { generateUUID } from '../../lib/utils';
 import { calculateUrgencyScore } from '../../lib/dispatchEngine';
@@ -53,6 +53,106 @@ export const CitizenHome: React.FC = () => {
   const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
   const [isTriageOpen, setIsTriageOpen] = useState(false);
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setActiveNotification({ title: 'Uploading Photo', message: 'Processing and transmitting image...' });
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6); // Compress to 60% quality jpeg
+
+        submitPhotoReport(compressedBase64);
+        if (fileInputRef.current) fileInputRef.current.value = ''; // Reset input
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const submitPhotoReport = async (base64string: string) => {
+    const uploadPhoto = async (lat: number, lon: number) => {
+      if (user) {
+        const reporter_id = generateUUID(user.uid);
+        await supabase.from('users').upsert([{ id: reporter_id, role: 'citizen', full_name: user.displayName || user.email || 'Citizen' }], { onConflict: 'id' });
+
+        const { score, reasoning } = calculateUrgencyScore({
+          peopleCount: 1,
+          isMedical: false,
+          severity: 'High',
+          vulnerabilities: [],
+          hazards: [],
+          requiredCapabilities: []
+        });
+
+        await supabase.from('incidents').insert([{
+          reporter_id,
+          status: 'reported',
+          category: 'photo_report',
+          raw_transcript: JSON.stringify({ type: 'photo_report', url: base64string }),
+          people_affected: 1,
+          hazards: [],
+          urgency_score: score,
+          urgency_band: score >= 80 ? 'critical' : score >= 50 ? 'high' : 'medium',
+          urgency_breakdown: reasoning,
+          location: `POINT(${lon} ${lat})`
+        }]);
+      }
+
+      const newIncident = {
+        id: Date.now(),
+        pos: [lat, lon],
+        title: 'Photo Report',
+        severity: 'High',
+        urgency_band: 70,
+        raw_transcript: JSON.stringify({ type: 'photo_report', url: base64string })
+      };
+      const existing = JSON.parse(localStorage.getItem('trinetra_live_incidents') || '[]');
+      localStorage.setItem('trinetra_live_incidents', JSON.stringify([...existing, newIncident]));
+      window.dispatchEvent(new Event('storage'));
+      
+      setActiveNotification({ title: 'Photo Uploaded', message: 'Authorities have received your photo report. Help is on the way.' });
+      setTimeout(() => setActiveNotification(null), 5000);
+    };
+
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => uploadPhoto(position.coords.latitude, position.coords.longitude),
+        (err) => {
+          console.warn('GPS failed', err);
+          uploadPhoto(28.6139, 77.2090); // Fallback static location
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    } else {
+      uploadPhoto(28.6139, 77.2090);
+    }
+  };
 
   const handleSosStart = () => {
     if (isSosTriggered) return;
@@ -280,6 +380,15 @@ export const CitizenHome: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col p-margin-mobile gap-section-gap overflow-y-auto max-w-[1440px] mx-auto w-full relative animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
+      {/* Hidden file input for Photo Report */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment" 
+        ref={fileInputRef}
+        onChange={handlePhotoCapture}
+        className="hidden"
+      />
       {/* Voice Distress Countdown Overlay */}
       {countdown !== null && (
         <div className="fixed inset-0 z-[200] bg-error/95 flex flex-col items-center justify-center p-6 text-white animate-fade-in backdrop-blur-md">
@@ -395,6 +504,17 @@ export const CitizenHome: React.FC = () => {
           <div>
             <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-charcoal-text">Triage Protocol</h3>
             <p className="font-label-sm text-on-surface-variant uppercase mt-2">Initiate Assessment</p>
+          </div>
+        </div>
+
+        {/* Photo Report Tile */}
+        <div onClick={() => fileInputRef.current?.click()} className="bg-stone-bg border border-outline-variant/30 rounded-xl p-8 flex flex-col justify-between min-h-[200px] hover:border-earth-accent/50 hover:shadow-md transition-all cursor-pointer group">
+          <div className="flex justify-between items-start mb-4">
+            <span className="material-symbols-outlined text-sage-primary text-4xl group-hover:scale-110 transition-transform font-light">photo_camera</span>
+          </div>
+          <div>
+            <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-charcoal-text">Photo Report</h3>
+            <p className="font-label-sm text-on-surface-variant uppercase mt-2">Send visual context</p>
           </div>
         </div>
 
