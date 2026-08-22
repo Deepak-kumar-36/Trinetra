@@ -352,9 +352,9 @@ export const DistressDetectionProvider: React.FC<{
           }
 
           const { data, error } = await supabase.from('incidents').insert({
-            user_id: userId,
+            reporter_id: userId,
             title: 'Voice SOS — Distress Keyword Detected',
-            severity: 'critical',
+            urgency_band: 'critical',
             trigger_source: 'voice_keyword_auto',
             trigger_confirmed: opts.confirmed, // null on timeout, true only if explicitly confirmed
             trigger_detail: triggerDetail === '__shout__' ? 'shout_detected' : triggerDetail, // schema note below

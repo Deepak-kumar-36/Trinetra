@@ -74,9 +74,9 @@ export const CitizenPhoto = () => {
       const { data, error: insertError } = await supabase
         .from('incidents')
         .insert({
-          user_id: user.id,
+          reporter_id: user.id,
           title: 'Photo Distress Report',
-          severity: 'critical',
+          urgency_band: 'critical',
           trigger_source: 'photo_report',
           trigger_confirmed: true, // User intentionally sent a photo
           trigger_detail: base64DataUrl, // Storing the compressed Base64 image directly!

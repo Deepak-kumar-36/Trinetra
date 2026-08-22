@@ -236,6 +236,7 @@ export const VolunteerLayout: React.FC = () => {
                   </p>
                 </>
               )}
+              <p className="font-body-md text-error font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">priority_high</span>{voiceAlert.urgency_band || voiceAlert.severity || 'Critical'}</p>
               <p className="text-sm text-on-surface-variant mt-2 flex items-center justify-center gap-1">
                 <span className="material-symbols-outlined text-[16px]">location_on</span>
                 {voiceAlert.pos ? `${voiceAlert.pos[0].toFixed(4)}, ${voiceAlert.pos[1].toFixed(4)}` : 'Location unavailable'}
