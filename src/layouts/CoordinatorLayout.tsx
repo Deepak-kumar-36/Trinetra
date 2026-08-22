@@ -224,7 +224,7 @@ export const CoordinatorLayout: React.FC = () => {
                   <div className="col-span-2 mb-2">
                     <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-2 font-bold">Photo Evidence</p>
                     <div className="w-full h-48 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-outline-variant">
-                      {voiceAlert.trigger_detail && voiceAlert.trigger_detail.startsWith('http') ? (
+                      {voiceAlert.trigger_detail && (voiceAlert.trigger_detail.startsWith('http') || voiceAlert.trigger_detail.startsWith('data:')) ? (
                         <img src={voiceAlert.trigger_detail} alt="SOS Evidence" className="w-full h-full object-cover" />
                       ) : (
                         <span className="material-symbols-outlined text-surface-variant text-[48px]">broken_image</span>

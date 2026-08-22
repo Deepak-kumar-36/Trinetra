@@ -219,7 +219,7 @@ export const VolunteerLayout: React.FC = () => {
                 <div className="mb-4">
                   <p className="font-label-sm text-error uppercase tracking-wider mb-2 font-bold">Photo Evidence</p>
                   <div className="w-full h-32 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-error/30">
-                    {voiceAlert.trigger_detail && voiceAlert.trigger_detail.startsWith('http') ? (
+                    {voiceAlert.trigger_detail && (voiceAlert.trigger_detail.startsWith('http') || voiceAlert.trigger_detail.startsWith('data:')) ? (
                       <img src={voiceAlert.trigger_detail} alt="SOS Evidence" className="w-full h-full object-cover" />
                     ) : (
                       <span className="material-symbols-outlined text-error text-[32px]">broken_image</span>

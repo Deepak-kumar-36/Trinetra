@@ -30,21 +30,45 @@ export const CitizenPhoto = () => {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
 
-      // 2. Upload Photo to Supabase Storage (incident-audio bucket, photo-sos folder)
-      const fileExt = file.name.split('.').pop() || 'jpg';
-      const filePath = `photo-sos/${user.id}/${Date.now()}.${fileExt}`;
+      // 2. Compress Photo to Base64 (Bypassing Supabase Storage Bucket)
+      const base64DataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 800;
+            const MAX_HEIGHT = 800;
+            let width = img.width;
+            let height = img.height;
 
-      const { error: uploadError } = await supabase.storage
-        .from('incident-audio')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data: publicUrlData } = supabase.storage
-        .from('incident-audio')
-        .getPublicUrl(filePath);
-
-      const publicUrl = publicUrlData.publicUrl;
+            if (width > height) {
+              if (width > MAX_WIDTH) {
+                height = Math.round((height * MAX_WIDTH) / width);
+                width = MAX_WIDTH;
+              }
+            } else {
+              if (height > MAX_HEIGHT) {
+                width = Math.round((width * MAX_HEIGHT) / height);
+                height = MAX_HEIGHT;
+              }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx?.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.6));
+          };
+          img.onerror = () => reject(new Error('Failed to load image for compression'));
+          if (typeof e.target?.result === 'string') {
+            img.src = e.target.result;
+          } else {
+            reject(new Error('Failed to read file as string'));
+          }
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
 
       // 3. Create Incident with trigger_source = 'photo_report'
       const { data, error: insertError } = await supabase
@@ -55,7 +79,7 @@ export const CitizenPhoto = () => {
           severity: 'critical',
           trigger_source: 'photo_report',
           trigger_confirmed: true, // User intentionally sent a photo
-          trigger_detail: publicUrl, // Storing the image URL here!
+          trigger_detail: base64DataUrl, // Storing the compressed Base64 image directly!
           location: { lat, lon },
         })
         .select()
