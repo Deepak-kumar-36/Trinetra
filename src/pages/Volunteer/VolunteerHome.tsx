@@ -339,13 +339,25 @@ export const VolunteerHome: React.FC = () => {
                           <span className="material-symbols-outlined text-[16px]">priority_high</span> Dispatched
                         </div>
 
-                        <div className="flex items-start gap-5 mb-5 mt-2">
-                          <div className="pt-1">
+                        <div className="flex justify-between items-start mb-5 mt-2">
+                          <div className="pt-1 pr-4">
                             <h4 className="font-bold text-xl text-primary">Action Required</h4>
                             <p className="text-sm text-on-surface-variant flex items-center gap-1 mt-1 font-semibold">
-                              <span className="material-symbols-outlined text-[16px] text-earth-accent">schedule</span> Urgent Response Requested
+                              <span className="material-symbols-outlined text-[16px] text-earth-accent">schedule</span> ETA to scene: 12 min
                             </p>
                           </div>
+                          <div className="bg-sage-primary text-white px-3 py-1.5 rounded-full font-label-sm flex items-center gap-1 shrink-0 shadow-md">
+                            <span className="material-symbols-outlined text-[16px]">check_circle</span> Perfect Match
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mt-5 mb-6">
+                          <span className="bg-surface text-primary px-3 py-1.5 rounded-md text-sm border border-surface-variant flex items-center gap-1 font-medium">
+                            <span className="material-symbols-outlined text-[14px] text-sage-primary">directions_boat</span> You have a boat
+                          </span>
+                          <span className="bg-surface text-primary px-3 py-1.5 rounded-md text-sm border border-surface-variant flex items-center gap-1 font-medium">
+                            <span className="material-symbols-outlined text-[14px] text-error">medical_services</span> You are first-aid trained
+                          </span>
                         </div>
 
                         <button 
