@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
+import { TriageProtocolModal } from './TriageProtocolModal';
 
 export const CitizenHome: React.FC = () => {
   const [sosActive, setSosActive] = useState(false);
@@ -9,6 +10,7 @@ export const CitizenHome: React.FC = () => {
   const [sosTimer, setSosTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<string | null>(null);
   const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
+  const [isTriageOpen, setIsTriageOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleSosStart = () => {
@@ -80,11 +82,51 @@ export const CitizenHome: React.FC = () => {
   };
 
   const handleTileClick = (feature: string) => {
+    if (feature === 'Triage Protocol') {
+      setIsTriageOpen(true);
+      return;
+    }
     setActiveNotification({
       title: 'Module Access',
       message: `Opening ${feature}...`
     });
     setTimeout(() => setActiveNotification(null), 3000);
+  };
+
+  const handleTriageComplete = (triageData: any) => {
+    setIsTriageOpen(false);
+    
+    // Broadcast triage report to Coordinator Map via localStorage
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+          const newIncident = {
+            id: Date.now(),
+            pos: [lat, lon],
+            title: `Triage: ${triageData.incidentType || 'General Emergency'}`,
+            severity: triageData.severity,
+            urgency_band: triageData.score,
+            raw_transcript: JSON.stringify({ type: 'triage_report', detail: triageData })
+          };
+          const existing = JSON.parse(localStorage.getItem('trinetra_live_incidents') || '[]');
+          localStorage.setItem('trinetra_live_incidents', JSON.stringify([...existing, newIncident]));
+          window.dispatchEvent(new Event('storage'));
+        },
+        (err) => console.warn("GPS failed", err),
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+
+    setActiveNotification({
+      title: 'Command Center Notified',
+      message: `Triage assessment submitted (Score: ${triageData.score}/100). Help is being dispatched immediately.`
+    });
+
+    setTimeout(() => {
+      setActiveNotification(null);
+    }, 6000);
   };
 
   const renderIncidentOptions = () => {
@@ -237,6 +279,12 @@ export const CitizenHome: React.FC = () => {
       >
         {renderIncidentOptions()}
       </Modal>
+
+      <TriageProtocolModal 
+        isOpen={isTriageOpen} 
+        onClose={() => setIsTriageOpen(false)} 
+        onComplete={handleTriageComplete} 
+      />
 
       {/* Toast Notification for Authority Dispatch */}
       {activeNotification && (
