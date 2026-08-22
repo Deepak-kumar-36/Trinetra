@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -28,7 +28,7 @@ const incidentIcon = L.divIcon({
 
 export const VolunteerMap: React.FC = () => {
   const navigate = useNavigate();
-  const [showLocationDetails, setShowLocationDetails] = useState(false);
+  // unused location details state removed
 
   // Using coordinates for New Delhi, India
   const volunteerPosition: [number, number] = [28.6139, 77.2090]; // Connaught Place area

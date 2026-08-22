@@ -6,7 +6,7 @@ import { Button } from '../../components/ui/Button';
 export const CitizenHome: React.FC = () => {
   const [sosActive, setSosActive] = useState(false);
   const [isSosTriggered, setIsSosTriggered] = useState(false);
-  const [sosTimer, setSosTimer] = useState<NodeJS.Timeout | null>(null);
+  const [sosTimer, setSosTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<string | null>(null);
   const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
   const navigate = useNavigate();
