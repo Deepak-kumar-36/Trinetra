@@ -1,165 +1,247 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { auth, googleProvider } from '../lib/firebase';
+import React, { useState } from 'react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
+
+const DEMO_ACCOUNTS = [
+  { email: 'deepak@trinetra.org', password: 'password', role: 'coordinator', displayName: 'Deepak Kumar' },
+  { email: 'vishesh@trinetra.org', password: 'password', role: 'volunteer', displayName: 'Vishesh Bharti' },
+  { email: 'adarsh@trinetra.org', password: 'password', role: 'volunteer', displayName: 'Adarsh Kumar' },
+  { email: 'moulik@trinetra.org', password: 'password', role: 'citizen', displayName: 'Moulik Tiwari' }
+];
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const role = searchParams.get('role') || 'citizen';
-  const { user, loading } = useAuth();
+  const roleFromParams = searchParams.get('role');
   
-  const [isLoginMode, setIsLoginMode] = useState(true);
+  const { user } = useAuth();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  
+  const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
-  // Auto-redirect if already logged in
-  useEffect(() => {
-    if (user && !loading) {
-      const storedRole = localStorage.getItem('trinetra_role') || role;
-      navigate(`/${storedRole}`);
+  // Auto redirect if already logged in
+  React.useEffect(() => {
+    if (user) {
+      const savedRole = localStorage.getItem('trinetra_role') || roleFromParams || 'citizen';
+      navigate(`/${savedRole}`);
     }
-  }, [user, loading, navigate, role]);
+  }, [user, navigate, roleFromParams]);
 
-  if (loading) {
-    return <LoadingScreen message="Checking authorization..." />;
-  }
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setAuthLoading(true);
-      setError(null);
-      await signInWithPopup(auth, googleProvider);
-      localStorage.setItem('trinetra_role', role);
-      navigate(`/${role}`);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to sign in with Google');
-      setAuthLoading(false);
-    }
-  };
-
-  const handleEmailAuth = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError('Please enter both email and password');
+      setError("Please fill in all required fields.");
       return;
     }
     
+    setError(null);
+    setLoading(true);
+
     try {
-      setAuthLoading(true);
-      setError(null);
-      
-      if (isLoginMode) {
+      if (isLogin) {
+        // Attempt to login using Firebase
         await signInWithEmailAndPassword(auth, email, password);
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        // Attempt to Sign Up using Firebase
+        if (!name) {
+          setError("Name is required for sign up.");
+          setLoading(false);
+          return;
+        }
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
       }
-      localStorage.setItem('trinetra_role', role);
-      navigate(`/${role}`);
+
+      // Default to citizen if no role selected
+      const finalRole = roleFromParams || 'citizen';
+      localStorage.setItem('trinetra_role', finalRole);
+      
+      // Auto-redirect handles the rest
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Authentication failed');
-      setAuthLoading(false);
+      setError(err.message || "Failed to authenticate.");
+      setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-stone-bg flex flex-col items-center justify-center p-margin-mobile relative overflow-hidden">
-      {/* Background gradients */}
-      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-tri-saffron via-transparent to-transparent"></div>
-      <div className="absolute bottom-0 right-0 w-full h-full opacity-10 pointer-events-none bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-tri-green via-transparent to-transparent"></div>
+  const fillDemoAccount = (acc: typeof DEMO_ACCOUNTS[0]) => {
+    setEmail(acc.email);
+    setPassword(acc.password);
+    setIsLogin(true);
+  };
 
-      <div className="w-full max-w-md z-10 animate-fade-in flex flex-col items-center bg-surface p-8 rounded-3xl shadow-lg border border-outline-variant">
+  const seedAccountsToFirebase = async () => {
+    setSeeding(true);
+    setError(null);
+    let successCount = 0;
+    
+    for (const acc of DEMO_ACCOUNTS) {
+      try {
+        const cred = await createUserWithEmailAndPassword(auth, acc.email, acc.password);
+        await updateProfile(cred.user, { displayName: acc.displayName });
+        successCount++;
+        // Sign out immediately so we can create the next one
+        await auth.signOut();
+      } catch (err: any) {
+        if (err.code === 'auth/email-already-in-use') {
+          console.log(`${acc.email} already exists.`);
+        } else {
+          console.error(err);
+        }
+      }
+    }
+    
+    setSeeding(false);
+    alert(`Seeding complete. ${successCount} new accounts created.`);
+  };
+
+  if (loading || seeding) return <LoadingScreen message={seeding ? "Registering Demo Accounts..." : "Authenticating..."} />;
+
+  return (
+    <div className="min-h-screen bg-stone-bg flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 right-0 w-96 h-96 bg-primary-container/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+      <div className="absolute bottom-0 left-0 w-96 h-96 bg-secondary-container/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+      
+      <div className="w-full max-w-md bg-white/70 backdrop-blur-xl p-8 rounded-3xl shadow-[0_8px_32px_rgba(140,115,85,0.1)] border border-white relative z-10 animate-fade-in-up">
         
-        {/* App Logo */}
-        <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-4 shadow-md overflow-hidden bg-surface p-1">
-          <img src="/logo.png" alt="trinetra Logo" className="w-full h-full object-contain rounded-xl" />
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-block hover:scale-105 transition-transform">
+            <div className="w-16 h-16 bg-gradient-to-tr from-primary to-primary-container rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-primary/20 mb-4 border border-white/50">
+              <span className="material-symbols-outlined text-on-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                policy
+              </span>
+            </div>
+          </Link>
+          <h1 className="text-3xl font-bold text-charcoal-text font-serif">TriNetra</h1>
+          <p className="text-on-surface-variant font-medium mt-1">
+            {roleFromParams ? `Login as ${roleFromParams.charAt(0).toUpperCase() + roleFromParams.slice(1)}` : 'Secure Access Portal'}
+          </p>
         </div>
-        
-        <h1 className="font-headline-lg text-on-surface mb-2 tracking-tight text-center capitalize">
-          {role} Portal
-        </h1>
-        <p className="font-body-md text-on-surface-variant mb-8 text-center">
-          {role === 'coordinator' 
-            ? 'Command Center. Authorized personnel only.' 
-            : role === 'volunteer' 
-              ? 'Community Dispatch. Sign in to help.' 
-              : 'Sign in to seek help and report emergencies.'}
-        </p>
 
         {error && (
-          <div className="w-full bg-error-container text-on-error-container p-4 rounded-lg mb-6 text-sm font-medium animate-fade-in flex items-start gap-3">
-            <span className="material-symbols-outlined text-error">error</span>
-            <p className="flex-1">{error}</p>
+          <div className="bg-error-container/50 text-error p-4 rounded-xl mb-6 text-sm font-medium border border-error/20 flex items-start gap-2">
+            <span className="material-symbols-outlined text-[18px]">error</span>
+            <p>{error}</p>
           </div>
         )}
 
-        {/* Email/Password Form */}
-        <form onSubmit={handleEmailAuth} className="w-full space-y-4 mb-6">
-          <Input 
-            type="email" 
-            label="Email Address" 
-            placeholder="coordinator@trinetra.org"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            disabled={authLoading}
-            required
-            className="w-full"
-          />
-          <Input 
-            type="password" 
-            label="Password" 
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            disabled={authLoading}
-            required
-            className="w-full"
-          />
+        <form onSubmit={handleSubmit} className="space-y-4">
           
-          <Button 
+          {!isLogin && (
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1 ml-1">Full Name</label>
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant/50">person</span>
+                <input 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter your name"
+                  className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-on-surface"
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1 ml-1">Email Address</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant/50">mail</span>
+              <input 
+                type="email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your email"
+                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-on-surface"
+                required
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1 ml-1">Password</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant/50">lock</span>
+              <input 
+                type="password" 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-on-surface"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1 ml-1">Phone Number (Optional)</label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant/50">call</span>
+              <input 
+                type="tel" 
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="+91 98765 43210"
+                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-on-surface"
+              />
+            </div>
+          </div>
+
+          <button 
             type="submit" 
-            disabled={authLoading} 
-            className="w-full py-4 text-lg font-bold tracking-wide mt-2 flex items-center justify-center gap-2"
+            className="w-full bg-primary hover:bg-primary/90 text-on-primary py-4 rounded-2xl font-bold tracking-wide transition-all active:scale-[0.98] shadow-md shadow-primary/20 mt-2"
           >
-            {authLoading ? (
-              <span className="material-symbols-outlined animate-spin">refresh</span>
-            ) : isLoginMode ? 'Sign In' : 'Create Account'}
-          </Button>
+            {isLogin ? 'Sign In' : 'Create Account'}
+          </button>
         </form>
 
-        <div className="w-full flex items-center gap-4 mb-6">
-          <div className="h-px bg-outline-variant flex-1"></div>
-          <span className="text-on-surface-variant font-label-sm uppercase tracking-wider text-xs">OR</span>
-          <div className="h-px bg-outline-variant flex-1"></div>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-on-surface-variant">
+            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            <button 
+              type="button"
+              onClick={() => { setIsLogin(!isLogin); setError(null); }}
+              className="text-primary font-bold hover:underline"
+            >
+              {isLogin ? 'Sign up' : 'Sign in'}
+            </button>
+          </p>
         </div>
 
-        {/* Google Sign In */}
-        <button
-          type="button"
-          onClick={handleGoogleSignIn}
-          disabled={authLoading}
-          className="w-full flex items-center justify-center gap-3 p-4 bg-surface-container hover:bg-surface-container-high border border-outline-variant rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
-        >
-          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" className="w-6 h-6" />
-          <span className="font-label-sm text-on-surface font-semibold">Continue with Google</span>
-        </button>
-
-        {/* Toggle Mode */}
-        <button 
-          type="button"
-          onClick={() => setIsLoginMode(!isLoginMode)}
-          className="mt-8 text-primary hover:text-primary-fixed transition-colors font-label-sm text-sm"
-        >
-          {isLoginMode ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
-        </button>
+        <div className="mt-8 text-center border-t border-outline-variant/30 pt-6">
+          <p className="text-xs text-on-surface-variant mb-3 font-bold uppercase tracking-widest">Quick Login</p>
+          <div className="flex flex-wrap justify-center gap-2">
+            {DEMO_ACCOUNTS.map(acc => (
+              <button 
+                key={acc.email}
+                onClick={() => fillDemoAccount(acc)}
+                className="text-[10px] bg-surface-variant hover:bg-surface-variant/80 px-3 py-1.5 rounded-lg text-on-surface-variant transition-colors border border-outline-variant/50"
+                title={`${acc.displayName} (${acc.role})`}
+              >
+                {acc.email}
+              </button>
+            ))}
+          </div>
+          
+          {/* Seed Button for setup */}
+          <button 
+            onClick={seedAccountsToFirebase}
+            className="mt-6 text-[10px] uppercase font-bold tracking-wider text-primary border border-primary/30 px-4 py-2 rounded-full hover:bg-primary-container transition-colors"
+          >
+            Seed Demo Accounts to Firebase
+          </button>
+        </div>
       </div>
     </div>
   );

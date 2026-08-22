@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export const CitizenLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSafe, setIsSafe] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
@@ -34,13 +36,9 @@ export const CitizenLayout: React.FC = () => {
           
           <NavLink 
             to="/citizen/profile"
-            className="hover:bg-surface-container-high transition-transform active:scale-95 duration-200 rounded-full overflow-hidden w-12 h-12 flex items-center justify-center border-2 border-surface-variant hover:border-sage-primary"
+            className="hover:bg-surface-container-high transition-transform active:scale-95 duration-200 rounded-full overflow-hidden w-12 h-12 flex items-center justify-center border-2 border-surface-variant hover:border-sage-primary bg-primary text-on-primary font-bold text-lg"
           >
-            <img 
-              alt="User profile" 
-              className="w-full h-full object-cover" 
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" 
-            />
+            {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
           </NavLink>
         </div>
       </header>
@@ -178,8 +176,8 @@ export const CitizenLayout: React.FC = () => {
               
               <div className="mt-auto pt-4">
                 <button 
-                  onClick={() => {
-                    localStorage.removeItem('trinetra_role');
+                  onClick={async () => {
+                    await signOut();
                     setIsMenuOpen(false);
                     navigate('/login?role=citizen');
                   }} 

@@ -31,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = async () => {
+    localStorage.removeItem('trinetra_role');
     await firebaseSignOut(auth);
   };
 
