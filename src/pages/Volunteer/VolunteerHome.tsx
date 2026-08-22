@@ -4,20 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateUUID } from '../../lib/utils';
 
-interface SOSMessage {
-  id: string;
-  name: string;
-  type: string;
-  message: string;
-  time: string;
-  distance: string;
-  urgency: 'high' | 'critical' | 'medium';
-}
 
-const INITIAL_MESSAGES: SOSMessage[] = [
-  { id: '1', name: 'Priya Sharma', type: 'Medical', message: 'Elderly person having severe asthma attack. Need oxygen immediately.', time: 'Just now', distance: '1.2 km away', urgency: 'critical' },
-  { id: '2', name: 'Rahul Gupta', type: 'Flood', message: 'Water entering ground floor. 3 people trapped including a child.', time: '2 min ago', distance: '2.5 km away', urgency: 'high' },
-];
 
 export const VolunteerHome: React.FC = () => {
   const navigate = useNavigate();

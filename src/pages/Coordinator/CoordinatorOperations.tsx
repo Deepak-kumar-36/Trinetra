@@ -6,8 +6,7 @@ import { generateUUID } from '../../lib/utils';
 export const CoordinatorOperations: React.FC = () => {
   const { user } = useAuth();
   const [incidents, setIncidents] = useState<any[]>([]);
-  const [activeDispatchId, setActiveDispatchId] = useState<string | null>(null);
-  const [dispatchedIncidents, setDispatchedIncidents] = useState<Record<string, string>>({});
+  const [dispatchedIncidents] = useState<Record<string, string>>({});
 
   const renderTranscript = (transcript: string) => {
     if (!transcript) return 'Emergency Reported';

@@ -12,8 +12,6 @@ export const CoordinatorLayout: React.FC = () => {
   const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
   const { isTTSEnabled, toggleTTS, speak } = useTTS();
 
-  const isMap = location.pathname.includes('/map');
-
   // Real-time Voice SOS Alert Listener for Command Center
   const [voiceAlert, setVoiceAlert] = useState<any>(null);
   const lastSeenIdRef = useRef<number>(0);

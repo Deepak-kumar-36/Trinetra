@@ -11,8 +11,6 @@ export const VolunteerLayout: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isTTSEnabled, toggleTTS, speak } = useTTS();
 
-  const isMap = location.pathname.includes('/map');
-
   // Real-time Voice SOS Alert Listener
   const [voiceAlert, setVoiceAlert] = useState<any>(null);
   const lastSeenIdRef = useRef<number>(0);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ArrowLeft, ArrowRight, AlertTriangle, User, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, ChevronRight } from 'lucide-react';
 
 interface TriageProtocolModalProps {
   isOpen: boolean;
