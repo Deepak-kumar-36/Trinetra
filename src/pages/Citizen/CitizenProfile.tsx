@@ -1,36 +1,95 @@
-import React from 'react';
-import { Card } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
+import React, { useState } from 'react';
 
 export const CitizenProfile: React.FC = () => {
+  const [bloodType, setBloodType] = useState('O+');
+  const [hasAsthma, setHasAsthma] = useState(true);
+  const [hasMobilityIssues, setHasMobilityIssues] = useState(false);
+
   return (
-    <div style={{ padding: 'var(--margin-mobile)', paddingTop: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <h2 style={{ fontSize: '28px', margin: 0 }}>Profile & Settings</h2>
+    <div className="flex-grow w-full max-w-[1040px] mx-auto px-margin-mobile md:px-margin-desktop py-section-gap pb-32">
+      <div className="mb-section-gap fade-in-up stagger-1">
+        <h2 className="font-headline-lg-mobile md:font-headline-lg text-charcoal-text mb-2">Medical Profile</h2>
+        <p className="font-body-md text-on-surface-variant">Your medical information is securely encrypted and only shared with verified responders during an active emergency.</p>
+      </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <Card variant="default">
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>Personal Info</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <Input label="Name" placeholder="Your name" defaultValue="Guest User" />
-            <Input label="Phone Number" placeholder="Your phone number" />
-            <Button variant="secondary" size="default">Save Changes</Button>
+      <div className="flex flex-col gap-8">
+        {/* Basic Info */}
+        <section className="bg-surface-container-lowest rounded-[1.5rem] p-6 md:p-8 shadow-sm border border-surface-variant fade-in-up stagger-2">
+          <h3 className="font-headline-lg-mobile text-primary mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined">person</span> Personal Data
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label className="font-label-sm text-charcoal-text block">Full Name</label>
+              <input type="text" defaultValue="Jane Doe" className="w-full h-14 px-4 rounded-xl bg-surface-container border-transparent focus:border-sage-primary focus:bg-surface focus:ring-1 focus:ring-sage-primary outline-none" />
+            </div>
+            <div className="space-y-2">
+              <label className="font-label-sm text-charcoal-text block">Date of Birth</label>
+              <input type="date" defaultValue="1985-06-15" className="w-full h-14 px-4 rounded-xl bg-surface-container border-transparent focus:border-sage-primary focus:bg-surface focus:ring-1 focus:ring-sage-primary outline-none" />
+            </div>
+            <div className="space-y-2">
+              <label className="font-label-sm text-charcoal-text block">Blood Type</label>
+              <select value={bloodType} onChange={(e) => setBloodType(e.target.value)} className="w-full h-14 px-4 rounded-xl bg-surface-container border-transparent focus:border-sage-primary focus:bg-surface focus:ring-1 focus:ring-sage-primary outline-none appearance-none">
+                <option value="O+">O Positive (O+)</option>
+                <option value="O-">O Negative (O-)</option>
+                <option value="A+">A Positive (A+)</option>
+                <option value="B+">B Positive (B+)</option>
+              </select>
+            </div>
           </div>
-        </Card>
+        </section>
 
-        <Card variant="default">
-          <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>App Settings</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '16px' }}>Language</span>
-              <span style={{ color: 'var(--primary-container)', fontWeight: 700 }}>English</span>
+        {/* Vulnerabilities & Conditions */}
+        <section className="bg-surface-container-lowest rounded-[1.5rem] p-6 md:p-8 shadow-sm border border-surface-variant fade-in-up stagger-3">
+          <h3 className="font-headline-lg-mobile text-error mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined">medical_information</span> Critical Conditions
+          </h3>
+          
+          <div className="space-y-4">
+            {/* Toggle 1 */}
+            <div className="flex items-center justify-between bg-surface-container-low p-4 rounded-xl border border-surface-variant">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center">
+                  <span className="material-symbols-outlined">air</span>
+                </div>
+                <div>
+                  <span className="font-label-sm text-on-surface block">Asthma / Respiratory</span>
+                  <span className="text-sm text-on-surface-variant">Requires inhaler or clean air</span>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={hasAsthma} onChange={(e) => setHasAsthma(e.target.checked)} />
+                <div className="w-14 h-7 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-error"></div>
+              </label>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '16px' }}>Notifications</span>
-              <span style={{ color: 'var(--primary-container)', fontWeight: 700 }}>Enabled</span>
+
+            {/* Toggle 2 */}
+            <div className="flex items-center justify-between bg-surface-container-low p-4 rounded-xl border border-surface-variant">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-surface-container-highest text-on-surface flex items-center justify-center">
+                  <span className="material-symbols-outlined">accessible</span>
+                </div>
+                <div>
+                  <span className="font-label-sm text-on-surface block">Mobility Impaired</span>
+                  <span className="text-sm text-on-surface-variant">Requires evacuation assistance</span>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={hasMobilityIssues} onChange={(e) => setHasMobilityIssues(e.target.checked)} />
+                <div className="w-14 h-7 bg-surface-variant rounded-full peer peer-checked:after:translate-x-full after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-error"></div>
+              </label>
             </div>
           </div>
-        </Card>
+        </section>
+
+        {/* Save Button */}
+        <div className="fade-in-up stagger-4">
+          <button className="w-full h-14 bg-sage-primary text-white rounded-xl font-label-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary transition-all shadow-md active:scale-[0.98]">
+            <span className="material-symbols-outlined">save</span>
+            Save Profile
+          </button>
+        </div>
       </div>
     </div>
   );

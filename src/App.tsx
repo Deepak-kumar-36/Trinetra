@@ -32,7 +32,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Splash />} />
-        <Route path="/role" element={<RoleSelection />} />
+        <Route path="/role-selection" element={<RoleSelection />} />
 
         {/* Citizen Flow */}
         <Route path="/citizen" element={<CitizenLayout />}>
