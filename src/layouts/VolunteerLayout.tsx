@@ -203,20 +203,39 @@ export const VolunteerLayout: React.FC = () => {
               <span className="material-symbols-outlined text-[48px] text-error">sos</span>
             </div>
             
-            <h2 className="font-display-lg text-error mb-2 text-2xl font-bold">Incoming Voice SOS</h2>
+            <h2 className="font-display-lg text-error mb-2 text-2xl font-bold">
+              {voiceAlert.trigger_source === 'photo_report' ? 'Incoming Photo SOS' : 'Incoming Voice SOS'}
+            </h2>
             <p className="font-body-lg text-on-surface-variant mb-6">
-              {voiceAlert.trigger_detail === 'shout_detected'
-                ? "A loud distress sound triggered an emergency alert."
-                : "A citizen's passive voice detection has triggered an emergency alert."}
+              {voiceAlert.trigger_source === 'photo_report'
+                ? "A citizen has uploaded photo evidence of an emergency from their location."
+                : voiceAlert.trigger_detail === 'shout_detected'
+                  ? "A loud distress sound triggered an emergency alert."
+                  : "A citizen's passive voice detection has triggered an emergency alert."}
             </p>
             
             <div className="bg-error/10 rounded-xl p-4 w-full mb-6 border border-error/20">
-              <p className="font-label-sm text-error uppercase tracking-wider mb-1 font-bold">
-                {voiceAlert.trigger_detail === 'shout_detected' ? 'Detected Shout' : 'Detected Keyword'}
-              </p>
-              <p className="font-headline-lg-mobile text-on-surface">
-                {voiceAlert.trigger_detail === 'shout_detected' ? 'Sustained Loud Noise' : voiceAlert.trigger_detail || voiceAlert.title}
-              </p>
+              {voiceAlert.trigger_source === 'photo_report' ? (
+                <div className="mb-4">
+                  <p className="font-label-sm text-error uppercase tracking-wider mb-2 font-bold">Photo Evidence</p>
+                  <div className="w-full h-32 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-error/30">
+                    {voiceAlert.trigger_detail && voiceAlert.trigger_detail.startsWith('http') ? (
+                      <img src={voiceAlert.trigger_detail} alt="SOS Evidence" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined text-error text-[32px]">broken_image</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="font-label-sm text-error uppercase tracking-wider mb-1 font-bold">
+                    {voiceAlert.trigger_detail === 'shout_detected' ? 'Detected Shout' : 'Detected Keyword'}
+                  </p>
+                  <p className="font-headline-lg-mobile text-on-surface">
+                    {voiceAlert.trigger_detail === 'shout_detected' ? 'Sustained Loud Noise' : voiceAlert.trigger_detail || voiceAlert.title}
+                  </p>
+                </>
+              )}
               <p className="text-sm text-on-surface-variant mt-2 flex items-center justify-center gap-1">
                 <span className="material-symbols-outlined text-[16px]">location_on</span>
                 {voiceAlert.pos ? `${voiceAlert.pos[0].toFixed(4)}, ${voiceAlert.pos[1].toFixed(4)}` : 'Location unavailable'}
@@ -224,8 +243,10 @@ export const VolunteerLayout: React.FC = () => {
             </div>
             
             <div className="flex items-center gap-2 mb-6">
-              <span className="inline-block w-3 h-3 bg-amber-500 rounded-full animate-[pulse_1s_ease-in-out_infinite]"></span>
-              <span className="font-label-sm text-amber-600 uppercase tracking-wider font-bold">Auto-detected — Unconfirmed</span>
+              <span className={`inline-block w-3 h-3 ${voiceAlert.trigger_source === 'photo_report' ? 'bg-error' : 'bg-amber-500'} rounded-full animate-[pulse_1s_ease-in-out_infinite]`}></span>
+              <span className={`font-label-sm ${voiceAlert.trigger_source === 'photo_report' ? 'text-error' : 'text-amber-600'} uppercase tracking-wider font-bold`}>
+                {voiceAlert.trigger_source === 'photo_report' ? 'Citizen App — Confirmed' : 'Auto-detected — Unconfirmed'}
+              </span>
             </div>
             
             <button 

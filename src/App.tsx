@@ -17,6 +17,7 @@ import { ReportEmergency } from './pages/Citizen/ReportEmergency';
 import { CitizenRequests } from './pages/Citizen/CitizenRequests';
 import { CitizenNearby } from './pages/Citizen/CitizenNearby';
 import { CitizenProfile } from './pages/Citizen/CitizenProfile';
+import { CitizenPhoto } from './pages/Citizen/CitizenPhoto';
 
 import { VolunteerHome } from './pages/Volunteer/VolunteerHome';
 import { VolunteerMissions } from './pages/Volunteer/VolunteerMissions';
@@ -44,6 +45,7 @@ function App() {
           <Route path="requests" element={<CitizenRequests />} />
           <Route path="nearby" element={<CitizenNearby />} />
           <Route path="profile" element={<CitizenProfile />} />
+          <Route path="photo" element={<CitizenPhoto />} />
         </Route>
         <Route path="/citizen/report" element={<ReportEmergency />} />
 

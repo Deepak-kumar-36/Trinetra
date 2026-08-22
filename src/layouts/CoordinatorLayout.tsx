@@ -204,26 +204,43 @@ export const CoordinatorLayout: React.FC = () => {
             
             <div className="bg-error text-white px-4 py-1.5 rounded-full font-label-sm uppercase tracking-widest mb-4 flex items-center gap-2">
               <span className="inline-block w-2 h-2 bg-white rounded-full animate-[pulse_0.5s_ease-in-out_infinite]"></span>
-              Priority Alert — Voice Auto-Detection
+              {voiceAlert.trigger_source === 'photo_report' ? 'Priority Alert — Photo Evidence' : 'Priority Alert — Voice Auto-Detection'}
             </div>
             
-            <h2 className="font-display-lg text-on-surface mb-2 text-2xl font-bold">Passive Distress Detected</h2>
+            <h2 className="font-display-lg text-on-surface mb-2 text-2xl font-bold">
+              {voiceAlert.trigger_source === 'photo_report' ? 'Photo SOS Received' : 'Passive Distress Detected'}
+            </h2>
             <p className="font-body-lg text-on-surface-variant mb-6">
-              {voiceAlert.trigger_detail === 'shout_detected'
-                ? "A citizen's device detected a sustained loud noise (shout). No manual confirmation was received — treat as potential emergency."
-                : "A citizen's device detected a distress keyword. No manual confirmation was received — treat as potential emergency."}
+              {voiceAlert.trigger_source === 'photo_report'
+                ? "A citizen has uploaded photo evidence of an emergency from their location."
+                : voiceAlert.trigger_detail === 'shout_detected'
+                  ? "A citizen's device detected a sustained loud noise (shout). No manual confirmation was received — treat as potential emergency."
+                  : "A citizen's device detected a distress keyword. No manual confirmation was received — treat as potential emergency."}
             </p>
             
             <div className="bg-surface-container rounded-xl p-5 w-full mb-6 border border-surface-variant">
               <div className="grid grid-cols-2 gap-4 text-left">
-                <div>
-                  <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">
-                    {voiceAlert.trigger_detail === 'shout_detected' ? 'Detection (Shout)' : 'Detection (Keyword)'}
-                  </p>
-                  <p className="font-headline-lg-mobile text-error">
-                    {voiceAlert.trigger_detail === 'shout_detected' ? 'Sustained Loud Noise' : voiceAlert.trigger_detail || voiceAlert.title}
-                  </p>
-                </div>
+                {voiceAlert.trigger_source === 'photo_report' ? (
+                  <div className="col-span-2 mb-2">
+                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-2 font-bold">Photo Evidence</p>
+                    <div className="w-full h-48 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-outline-variant">
+                      {voiceAlert.trigger_detail && voiceAlert.trigger_detail.startsWith('http') ? (
+                        <img src={voiceAlert.trigger_detail} alt="SOS Evidence" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="material-symbols-outlined text-surface-variant text-[48px]">broken_image</span>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">
+                      {voiceAlert.trigger_detail === 'shout_detected' ? 'Detection (Shout)' : 'Detection (Keyword)'}
+                    </p>
+                    <p className="font-headline-lg-mobile text-error">
+                      {voiceAlert.trigger_detail === 'shout_detected' ? 'Sustained Loud Noise' : voiceAlert.trigger_detail || voiceAlert.title}
+                    </p>
+                  </div>
+                )}
                 <div>
                   <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Coordinates</p>
                   <p className="font-body-md text-on-surface font-mono">{voiceAlert.pos ? `${voiceAlert.pos[0].toFixed(4)}, ${voiceAlert.pos[1].toFixed(4)}` : 'N/A'}</p>
@@ -234,7 +251,12 @@ export const CoordinatorLayout: React.FC = () => {
                 </div>
                 <div>
                   <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Source</p>
-                  <p className="font-body-md text-amber-600 font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">memory</span>Unconfirmed Auto</p>
+                  <p className="font-body-md text-amber-600 font-bold flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[16px]">
+                      {voiceAlert.trigger_source === 'photo_report' ? 'photo_camera' : 'memory'}
+                    </span>
+                    {voiceAlert.trigger_source === 'photo_report' ? 'Citizen App' : 'Unconfirmed Auto'}
+                  </p>
                 </div>
               </div>
             </div>

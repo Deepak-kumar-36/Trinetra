@@ -1,0 +1,161 @@
+import React, { useRef, useState } from 'react';
+import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+
+export const CitizenPhoto = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [isUploading, setIsUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!user) return;
+    setIsUploading(true);
+    setError(null);
+
+    try {
+      // 1. Get Location
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        });
+      });
+
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      // 2. Upload Photo to Supabase Storage (incident-audio bucket, photo-sos folder)
+      const fileExt = file.name.split('.').pop() || 'jpg';
+      const filePath = `photo-sos/${user.id}/${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('incident-audio')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('incident-audio')
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData.publicUrl;
+
+      // 3. Create Incident with trigger_source = 'photo_report'
+      const { data, error: insertError } = await supabase
+        .from('incidents')
+        .insert({
+          user_id: user.id,
+          title: 'Photo Distress Report',
+          severity: 'critical',
+          trigger_source: 'photo_report',
+          trigger_confirmed: true, // User intentionally sent a photo
+          trigger_detail: publicUrl, // Storing the image URL here!
+          location: { lat, lon },
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // 4. Broadcast to other devices
+      const channel = supabase.channel('sos-alerts');
+      channel.send({
+        type: 'broadcast',
+        event: 'new-voice-sos', // Reusing the same realtime event name so we don't have to rewrite listeners
+        payload: data,
+      });
+      supabase.removeChannel(channel);
+
+      // Successfully uploaded! Navigate back to home or show success
+      navigate('/citizen', { replace: true });
+
+    } catch (err: any) {
+      console.error('Photo upload failed:', err);
+      setError(err.message || 'Failed to send photo alert. Please check location permissions and try again.');
+      setIsUploading(false);
+    }
+  };
+
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handlePhotoUpload(e.target.files[0]);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-full bg-surface-container-lowest overflow-hidden">
+      {/* Header */}
+      <div className="bg-primary text-on-primary p-6 rounded-b-[2rem] shadow-md z-10 flex flex-col pt-12">
+        <h1 className="font-display-lg text-[2.5rem] leading-tight mb-2">Photo SOS</h1>
+        <p className="font-body-lg text-primary-container/80">
+          Capture an emergency to instantly dispatch volunteers to your exact location.
+        </p>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6 relative z-0">
+        
+        {isUploading ? (
+          <div className="flex flex-col items-center justify-center p-10 bg-surface-container rounded-3xl w-full max-w-sm text-center shadow-lg animate-pulse">
+            <span className="material-symbols-outlined text-[64px] text-primary animate-spin mb-4">refresh</span>
+            <h3 className="font-headline-sm text-on-surface font-bold">Uploading Alert...</h3>
+            <p className="font-body-md text-on-surface-variant mt-2">Sending location and photo to the Coordinator.</p>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <div className="w-full bg-error-container text-on-error-container p-4 rounded-xl border border-error/30 mb-2 flex items-start gap-3">
+                <span className="material-symbols-outlined text-error mt-0.5">error</span>
+                <p className="font-body-md font-medium text-sm">{error}</p>
+              </div>
+            )}
+            
+            <button 
+              onClick={() => cameraInputRef.current?.click()}
+              className="w-full max-w-sm aspect-[4/3] bg-error text-white rounded-[2rem] shadow-[0_8px_30px_rgba(200,50,50,0.3)] hover:bg-error/90 active:scale-95 transition-all flex flex-col items-center justify-center gap-4 relative overflow-hidden group"
+            >
+              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+              <span className="material-symbols-outlined text-[72px] drop-shadow-md">photo_camera</span>
+              <span className="font-display-sm text-2xl font-bold uppercase tracking-wider drop-shadow-md">Click Photo</span>
+              <span className="font-label-sm opacity-80 uppercase tracking-widest text-xs">Live Capture</span>
+            </button>
+
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full max-w-sm h-[100px] bg-surface-container text-on-surface rounded-2xl shadow-sm border border-outline-variant/50 hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-4 relative overflow-hidden"
+            >
+              <span className="material-symbols-outlined text-[32px] text-primary">collections</span>
+              <div className="flex flex-col text-left">
+                <span className="font-headline-sm font-bold tracking-tight">Select from Gallery</span>
+                <span className="font-label-sm text-on-surface-variant uppercase tracking-wider text-[10px]">Upload existing image</span>
+              </div>
+            </button>
+          </>
+        )}
+
+        {/* Hidden inputs */}
+        <input 
+          type="file" 
+          accept="image/*" 
+          capture="environment" 
+          ref={cameraInputRef} 
+          className="hidden" 
+          onChange={onFileChange} 
+        />
+        <input 
+          type="file" 
+          accept="image/*" 
+          ref={fileInputRef} 
+          className="hidden" 
+          onChange={onFileChange} 
+        />
+      </div>
+    </div>
+  );
+};
