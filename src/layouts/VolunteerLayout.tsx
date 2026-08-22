@@ -1,11 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export const VolunteerLayout: React.FC = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isMap = location.pathname.includes('/map');
+
+  // Real-time Voice SOS Alert Listener
+  const [voiceAlert, setVoiceAlert] = useState<any>(null);
+  const lastSeenIdRef = useRef<number>(0);
+
+  useEffect(() => {
+    const checkForVoiceSOS = () => {
+      const stored = localStorage.getItem('trinetra_live_incidents');
+      if (stored) {
+        try {
+          const incidents = JSON.parse(stored);
+          const voiceIncidents = incidents.filter(
+            (inc: any) => inc.trigger_source === 'voice_keyword_auto' && inc.id > lastSeenIdRef.current
+          );
+          if (voiceIncidents.length > 0) {
+            const latest = voiceIncidents[voiceIncidents.length - 1];
+            lastSeenIdRef.current = latest.id;
+            triggerVoiceAlert(latest);
+          }
+        } catch(e) {}
+      }
+    };
+
+    // 1. Supabase Realtime Subscription (Cross-device for pitch)
+    const channel = supabase.channel('sos-alerts');
+    channel.on('broadcast', { event: 'new-voice-sos' }, (payload) => {
+      console.log('Received Supabase Voice SOS:', payload.payload);
+      const incident = payload.payload;
+      if (incident.id > lastSeenIdRef.current) {
+        lastSeenIdRef.current = incident.id;
+        triggerVoiceAlert(incident);
+      }
+    }).subscribe();
+
+    // 2. LocalStorage Polling (Local fallback)
+    const interval = setInterval(checkForVoiceSOS, 2000);
+    window.addEventListener('storage', checkForVoiceSOS);
+    
+    return () => { 
+      clearInterval(interval); 
+      window.removeEventListener('storage', checkForVoiceSOS); 
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const triggerVoiceAlert = (incident: any) => {
+    setVoiceAlert(incident);
+    // Vibrate if supported
+    if ('vibrate' in navigator) navigator.vibrate([300, 100, 300, 100, 300]);
+    // Play alert sound
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'sawtooth'; osc.frequency.value = 600;
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      osc.start(); setTimeout(() => osc.stop(), 800);
+    } catch(e) {}
+  };
 
   return (
     <div className="bg-stone-bg text-charcoal-text font-body-md min-h-screen flex flex-col pt-20 pb-28 relative">
@@ -131,6 +192,49 @@ export const VolunteerLayout: React.FC = () => {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Voice SOS Incoming Alert */}
+      {voiceAlert && (
+        <div className="fixed inset-0 z-[9999] bg-black/80 flex flex-col items-center justify-center p-6 animate-fade-in backdrop-blur-md">
+          <div className="w-full max-w-md bg-surface-container-lowest rounded-3xl p-8 shadow-2xl flex flex-col items-center text-center border-2 border-error/50">
+            <div className="w-20 h-20 rounded-full bg-error/15 flex items-center justify-center mb-6 animate-[pulse_1.5s_ease-in-out_infinite]">
+              <span className="material-symbols-outlined text-[48px] text-error">sos</span>
+            </div>
+            
+            <h2 className="font-display-lg text-error mb-2 text-2xl font-bold">Incoming Voice SOS</h2>
+            <p className="font-body-lg text-on-surface-variant mb-6">
+              {voiceAlert.trigger_detail === 'shout_detected'
+                ? "A loud distress sound triggered an emergency alert."
+                : "A citizen's passive voice detection has triggered an emergency alert."}
+            </p>
+            
+            <div className="bg-error/10 rounded-xl p-4 w-full mb-6 border border-error/20">
+              <p className="font-label-sm text-error uppercase tracking-wider mb-1 font-bold">
+                {voiceAlert.trigger_detail === 'shout_detected' ? 'Detected Shout' : 'Detected Keyword'}
+              </p>
+              <p className="font-headline-lg-mobile text-on-surface">
+                {voiceAlert.trigger_detail === 'shout_detected' ? 'Sustained Loud Noise' : voiceAlert.trigger_detail || voiceAlert.title}
+              </p>
+              <p className="text-sm text-on-surface-variant mt-2 flex items-center justify-center gap-1">
+                <span className="material-symbols-outlined text-[16px]">location_on</span>
+                {voiceAlert.pos ? `${voiceAlert.pos[0].toFixed(4)}, ${voiceAlert.pos[1].toFixed(4)}` : 'Location unavailable'}
+              </p>
+            </div>
+            
+            <div className="flex items-center gap-2 mb-6">
+              <span className="inline-block w-3 h-3 bg-amber-500 rounded-full animate-[pulse_1s_ease-in-out_infinite]"></span>
+              <span className="font-label-sm text-amber-600 uppercase tracking-wider font-bold">Auto-detected — Unconfirmed</span>
+            </div>
+            
+            <button 
+              onClick={() => setVoiceAlert(null)}
+              className="w-full h-14 bg-sage-primary text-white rounded-xl font-bold uppercase tracking-wider hover:bg-primary transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95"
+            >
+              <span className="material-symbols-outlined">check_circle</span>
+              Acknowledge & Respond
+            </button>
           </div>
         </div>
       )}

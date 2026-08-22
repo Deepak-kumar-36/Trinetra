@@ -1,11 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Outlet, NavLink, useLocation, Link } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 export const CoordinatorLayout: React.FC = () => {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isMap = location.pathname.includes('/map');
+
+  // Real-time Voice SOS Alert Listener for Command Center
+  const [voiceAlert, setVoiceAlert] = useState<any>(null);
+  const lastSeenIdRef = useRef<number>(0);
+
+  useEffect(() => {
+    const checkForVoiceSOS = () => {
+      const stored = localStorage.getItem('trinetra_live_incidents');
+      if (stored) {
+        try {
+          const incidents = JSON.parse(stored);
+          const voiceIncidents = incidents.filter(
+            (inc: any) => inc.trigger_source === 'voice_keyword_auto' && inc.id > lastSeenIdRef.current
+          );
+          if (voiceIncidents.length > 0) {
+            const latest = voiceIncidents[voiceIncidents.length - 1];
+            lastSeenIdRef.current = latest.id;
+            triggerVoiceAlert(latest);
+          }
+        } catch(e) {}
+      }
+    };
+
+    // 1. Supabase Realtime Subscription (Cross-device for pitch)
+    const channel = supabase.channel('sos-alerts');
+    channel.on('broadcast', { event: 'new-voice-sos' }, (payload) => {
+      console.log('Received Supabase Voice SOS (Coordinator):', payload.payload);
+      const incident = payload.payload;
+      if (incident.id > lastSeenIdRef.current) {
+        lastSeenIdRef.current = incident.id;
+        triggerVoiceAlert(incident);
+      }
+    }).subscribe();
+
+    // 2. LocalStorage Polling (Local fallback)
+    const interval = setInterval(checkForVoiceSOS, 2000);
+    window.addEventListener('storage', checkForVoiceSOS);
+    
+    return () => { 
+      clearInterval(interval); 
+      window.removeEventListener('storage', checkForVoiceSOS); 
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const triggerVoiceAlert = (incident: any) => {
+    setVoiceAlert(incident);
+    if ('vibrate' in navigator) navigator.vibrate([500, 200, 500]);
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'square'; osc.frequency.value = 440;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      osc.start(); setTimeout(() => { osc.frequency.value = 880; }, 300); setTimeout(() => osc.stop(), 600);
+    } catch(e) {}
+  };
 
   return (
     <div className="bg-stone-bg text-charcoal-text font-body-md min-h-screen flex flex-col pt-20 pb-28 relative">
@@ -132,6 +191,61 @@ export const CoordinatorLayout: React.FC = () => {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Voice SOS Command Center Alert */}
+      {voiceAlert && (
+        <div className="fixed inset-0 z-[9999] bg-black/85 flex flex-col items-center justify-center p-6 animate-fade-in backdrop-blur-md">
+          <div className="w-full max-w-lg bg-surface-container-lowest rounded-[2rem] p-8 shadow-2xl flex flex-col items-center text-center border-2 border-error">
+            <div className="w-24 h-24 rounded-full bg-error flex items-center justify-center mb-6 animate-[pulse_1s_ease-in-out_infinite] shadow-[0_0_40px_rgba(200,50,50,0.5)]">
+              <span className="material-symbols-outlined text-[56px] text-white">warning</span>
+            </div>
+            
+            <div className="bg-error text-white px-4 py-1.5 rounded-full font-label-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+              <span className="inline-block w-2 h-2 bg-white rounded-full animate-[pulse_0.5s_ease-in-out_infinite]"></span>
+              Priority Alert — Voice Auto-Detection
+            </div>
+            
+            <h2 className="font-display-lg text-on-surface mb-2 text-2xl font-bold">Passive Distress Detected</h2>
+            <p className="font-body-lg text-on-surface-variant mb-6">
+              {voiceAlert.trigger_detail === 'shout_detected'
+                ? "A citizen's device detected a sustained loud noise (shout). No manual confirmation was received — treat as potential emergency."
+                : "A citizen's device detected a distress keyword. No manual confirmation was received — treat as potential emergency."}
+            </p>
+            
+            <div className="bg-surface-container rounded-xl p-5 w-full mb-6 border border-surface-variant">
+              <div className="grid grid-cols-2 gap-4 text-left">
+                <div>
+                  <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">
+                    {voiceAlert.trigger_detail === 'shout_detected' ? 'Detection (Shout)' : 'Detection (Keyword)'}
+                  </p>
+                  <p className="font-headline-lg-mobile text-error">
+                    {voiceAlert.trigger_detail === 'shout_detected' ? 'Sustained Loud Noise' : voiceAlert.trigger_detail || voiceAlert.title}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Coordinates</p>
+                  <p className="font-body-md text-on-surface font-mono">{voiceAlert.pos ? `${voiceAlert.pos[0].toFixed(4)}, ${voiceAlert.pos[1].toFixed(4)}` : 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Severity</p>
+                  <p className="font-body-md text-error font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">priority_high</span>{voiceAlert.severity || 'Critical'}</p>
+                </div>
+                <div>
+                  <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Source</p>
+                  <p className="font-body-md text-amber-600 font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">memory</span>Unconfirmed Auto</p>
+                </div>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setVoiceAlert(null)}
+              className="w-full h-14 bg-error text-white rounded-xl font-bold uppercase tracking-wider hover:bg-error/90 transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95"
+            >
+              <span className="material-symbols-outlined">verified</span>
+              Acknowledge & Deploy Response
+            </button>
           </div>
         </div>
       )}

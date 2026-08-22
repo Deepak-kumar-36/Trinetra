@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, useMap } from 'react-leaflet';
+import { supabase } from '../../lib/supabase';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -91,12 +92,28 @@ export const CoordinatorMap: React.FC = () => {
       }
     };
     
+    // Initial load
     loadIncidents();
+    
+    // 1. Supabase Realtime Subscription (Cross-device)
+    const channel = supabase.channel('sos-alerts');
+    channel.on('broadcast', { event: 'new-voice-sos' }, (payload) => {
+      console.log('Coordinator Map received Supabase SOS:', payload.payload);
+      setIncidents((prev) => {
+        // Prevent duplicates
+        if (prev.some(inc => inc.id === payload.payload.id)) return prev;
+        return [...prev, payload.payload];
+      });
+    }).subscribe();
+
+    // 2. LocalStorage Polling (Local tab fallback)
     window.addEventListener('storage', loadIncidents);
     const interval = setInterval(loadIncidents, 3000);
+    
     return () => {
       window.removeEventListener('storage', loadIncidents);
       clearInterval(interval);
+      supabase.removeChannel(channel);
     };
   }, []);
   
@@ -258,7 +275,9 @@ export const CoordinatorMap: React.FC = () => {
               <Marker key={`inc-${inc.id}`} position={inc.pos} icon={incidentIcon}>
                 <Popup className="border-none rounded-xl overflow-hidden shadow-lg m-0">
                   <div className="p-1">
-                    <h3 className="font-label-sm uppercase text-error font-bold mb-1">{inc.title}</h3>
+                    <h3 className="font-label-sm uppercase text-error font-bold mb-1">
+                      {inc.trigger_detail === 'shout_detected' ? 'Voice SOS — Shout Detected' : inc.title}
+                    </h3>
                     <p className="text-xs text-on-surface-variant">Severity: <span className="text-error">{inc.severity}</span></p>
                   </div>
                 </Popup>

@@ -5,6 +5,24 @@ export const CitizenProfile: React.FC = () => {
   const [hasAsthma, setHasAsthma] = useState(true);
   const [hasMobilityIssues, setHasMobilityIssues] = useState(false);
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  const handleSave = () => {
+    if (isSaving) return;
+    setIsSaving(true);
+    setSaveSuccess(false);
+    
+    // Simulate network save for the demo
+    setTimeout(() => {
+      setIsSaving(false);
+      setSaveSuccess(true);
+      
+      // Reset success state after a few seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }, 800);
+  };
+
   return (
     <div className="flex-grow w-full max-w-[1040px] mx-auto px-margin-mobile md:px-margin-desktop py-section-gap pb-32">
       <div className="mb-section-gap fade-in-up stagger-1">
@@ -85,9 +103,33 @@ export const CitizenProfile: React.FC = () => {
 
         {/* Save Button */}
         <div className="fade-in-up stagger-4">
-          <button className="w-full h-14 bg-sage-primary text-white rounded-xl font-label-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary transition-all shadow-md active:scale-[0.98]">
-            <span className="material-symbols-outlined">save</span>
-            Save Profile
+          <button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className={`w-full h-14 text-white rounded-xl font-label-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-md ${
+              saveSuccess 
+                ? 'bg-primary' 
+                : isSaving
+                ? 'bg-sage-primary/70 cursor-not-allowed'
+                : 'bg-sage-primary hover:bg-primary active:scale-[0.98]'
+            }`}
+          >
+            {isSaving ? (
+              <>
+                <span className="material-symbols-outlined animate-spin">refresh</span>
+                Saving...
+              </>
+            ) : saveSuccess ? (
+              <>
+                <span className="material-symbols-outlined">check_circle</span>
+                Saved Successfully
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined">save</span>
+                Save Profile
+              </>
+            )}
           </button>
         </div>
       </div>

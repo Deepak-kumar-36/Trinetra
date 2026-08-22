@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
+import { DistressDetectionProvider, useDistressDetection } from '../contexts/DistressDetectionContext';
 
-export const CitizenLayout: React.FC = () => {
+const CitizenLayoutInner: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { enabled, setEnabled } = useDistressDetection();
 
   const isReport = location.pathname.includes('/report');
 
@@ -29,6 +31,20 @@ export const CitizenLayout: React.FC = () => {
             <span style={{color: '#138808'}}>i</span>
             <span className="font-bold text-primary ml-0.5">NETRA</span>
           </h1>
+          
+          <button 
+            onClick={() => setEnabled(!enabled)}
+            className={`p-2 rounded-full flex items-center justify-center transition-all duration-300 ${
+              enabled 
+                ? 'bg-error/15 text-error animate-[pulse_2s_ease-in-out_infinite] ring-2 ring-error/30' 
+                : 'text-on-surface-variant hover:bg-surface-container-high'
+            }`}
+            title={enabled ? 'Voice detection ON — listening for distress keywords' : 'Enable passive voice detection'}
+          >
+            <span className="material-symbols-outlined text-[22px]" style={{ fontVariationSettings: enabled ? "'FILL' 1" : "'FILL' 0" }}>
+              {enabled ? 'mic' : 'mic_off'}
+            </span>
+          </button>
           
           <NavLink 
             to="/citizen/profile"
@@ -151,3 +167,9 @@ export const CitizenLayout: React.FC = () => {
     </div>
   );
 };
+
+export const CitizenLayout: React.FC = () => (
+  <DistressDetectionProvider userId="demo-citizen-id" initialEnabled={false}>
+    <CitizenLayoutInner />
+  </DistressDetectionProvider>
+);
