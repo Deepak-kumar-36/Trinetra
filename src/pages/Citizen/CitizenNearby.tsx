@@ -1,91 +1,133 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Create custom icons matching the app's premium UI
+const createPulseIcon = (color: string, borderColor: string) => L.divIcon({
+  className: 'custom-leaflet-icon',
+  html: `<div style="width: 24px; height: 24px; background-color: ${color}; border-radius: 50%; border: 3px solid ${borderColor}; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); display: flex; align-items: center; justify-content: center; position: relative;">
+           <div style="width: 6px; height: 6px; background-color: white; border-radius: 50%; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+         </div>`,
+  iconSize: [24, 24],
+  iconAnchor: [12, 12],
+  popupAnchor: [0, -12]
+});
+
+// Citizen location (pulsing green)
+const citizenIcon = createPulseIcon('#4CAF50', '#FFFFFF');
+
+// Shelter Icon (blue)
+const shelterIcon = L.divIcon({
+  className: 'custom-leaflet-icon',
+  html: `<div style="width: 32px; height: 32px; background-color: #3b82f6; border-radius: 50%; border: 3px solid #bfdbfe; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); display: flex; align-items: center; justify-content: center;">
+           <span class="material-symbols-outlined" style="color: white; font-size: 16px;">home</span>
+         </div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16]
+});
+
+// Supplies Icon (orange)
+const suppliesIcon = L.divIcon({
+  className: 'custom-leaflet-icon',
+  html: `<div style="width: 32px; height: 32px; background-color: #f59e0b; border-radius: 50%; border: 3px solid #fde68a; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); display: flex; align-items: center; justify-content: center;">
+           <span class="material-symbols-outlined" style="color: white; font-size: 16px;">local_shipping</span>
+         </div>`,
+  iconSize: [32, 32],
+  iconAnchor: [16, 16],
+  popupAnchor: [0, -16]
+});
 
 export const CitizenNearby: React.FC = () => {
-  return (
-    <div className="flex-grow w-full max-w-[1040px] mx-auto px-margin-mobile md:px-margin-desktop py-gutter flex flex-col gap-section-gap pb-32">
-      {/* Search Section */}
-      <section className="flex flex-col gap-4 fade-in-up stagger-1">
-        <h2 className="font-headline-lg-mobile md:font-headline-lg text-charcoal-text">Offline Maps Management</h2>
-        <p className="font-body-md text-on-surface-variant">Download maps for critical regions to ensure navigation availability without connectivity.</p>
-        <div className="relative w-full">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <span className="material-symbols-outlined text-outline">search</span>
-          </div>
-          <input className="w-full h-14 pl-12 pr-4 rounded-[1.5rem] bg-surface-container border border-surface-variant focus:bg-surface focus:border-sage-primary focus:ring-1 focus:ring-sage-primary font-body-md text-charcoal-text placeholder-on-surface-variant transition-colors outline-none" placeholder="Search for cities, regions, or coordinates..." type="text"/>
-        </div>
-      </section>
-      
-      {/* Downloaded Regions */}
-      <section className="flex flex-col gap-6 fade-in-up stagger-2">
-        <h3 className="font-body-lg text-charcoal-text font-bold">Downloaded Regions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
-          {/* Card 1 */}
-          <div className="bg-surface rounded-[1.5rem] p-4 flex gap-4 items-center border border-surface-variant shadow-[0_8px_32px_rgba(140,115,85,0.08)] transition-transform hover:-translate-y-1 duration-300">
-            <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-high relative">
-              <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-3xl opacity-50">map</span>
-              </div>
-            </div>
-            <div className="flex-grow flex flex-col gap-1">
-              <h4 className="font-body-md font-semibold text-charcoal-text">Downtown District</h4>
-              <p className="font-label-sm text-on-surface-variant">120 MB • Updated 2 days ago</p>
-              <div className="flex gap-2 mt-2">
-                <button className="bg-sage-primary text-on-primary font-label-sm px-4 py-2 rounded-full shadow-sm active:scale-95 transition-transform flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[18px]">update</span> Update
-                </button>
-                <button className="border border-earth-accent text-earth-accent font-label-sm px-4 py-2 rounded-full active:scale-95 transition-transform flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[18px]">delete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-          {/* Card 2 */}
-          <div className="bg-surface rounded-[1.5rem] p-4 flex gap-4 items-center border border-surface-variant shadow-[0_8px_32px_rgba(140,115,85,0.08)] transition-transform hover:-translate-y-1 duration-300">
-            <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-high relative">
-              <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-3xl opacity-50">map</span>
-              </div>
-            </div>
-            <div className="flex-grow flex flex-col gap-1">
-              <h4 className="font-body-md font-semibold text-charcoal-text">Riverside Sector</h4>
-              <p className="font-label-sm text-on-surface-variant">85 MB • Updated 1 week ago</p>
-              <div className="flex gap-2 mt-2">
-                <button className="bg-surface-variant text-on-surface-variant font-label-sm px-4 py-2 rounded-full active:scale-95 transition-transform flex items-center gap-1 opacity-50 cursor-not-allowed">
-                  <span className="material-symbols-outlined text-[18px]">check</span> Up to date
-                </button>
-                <button className="border border-earth-accent text-earth-accent font-label-sm px-4 py-2 rounded-full active:scale-95 transition-transform flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[18px]">delete</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+  // Center on New Delhi
+  const citizenPosition: [number, number] = [28.6139, 77.2090];
+  
+  // Dummy data for shelters and supplies
+  const shelters = [
+    { id: 1, pos: [28.6180, 77.2030] as [number, number], name: "NDMC Relief Camp", capacity: "350 / 500", status: "Open" },
+    { id: 2, pos: [28.6080, 77.2150] as [number, number], name: "Govt School Shelter", capacity: "120 / 200", status: "Filling Fast" },
+  ];
+  
+  const supplies = [
+    { id: 1, pos: [28.6150, 77.2150] as [number, number], name: "Red Cross Drop Point", items: "Food, Water, Meds" },
+    { id: 2, pos: [28.6100, 77.2000] as [number, number], name: "Community Kitchen", items: "Hot Meals" },
+  ];
 
-      {/* Suggested Maps */}
-      <section className="flex flex-col gap-6 fade-in-up stagger-3">
-        <div className="mb-2">
-          <h3 className="font-body-lg text-charcoal-text font-bold">Download New Map</h3>
-          <p className="font-body-md text-on-surface-variant">Suggested regions based on your current location.</p>
-        </div>
-        
-        <div className="bg-surface rounded-[1.5rem] p-4 flex gap-4 items-center border border-surface-variant shadow-sm">
-          <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container-high relative">
-            <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-3xl opacity-50">terrain</span>
+  return (
+    <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+      
+      {/* HUD Header Overlay */}
+      <div className="absolute top-0 w-full z-20 p-margin-mobile fade-in-up stagger-1 pointer-events-none">
+        <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-md border border-gray-100 flex flex-col gap-1 pointer-events-auto">
+          <h2 className="font-headline-lg-mobile text-charcoal-text m-0">Nearby Resources</h2>
+          <p className="text-xs text-gray-500 m-0">Locate safe shelters and emergency supplies in your area.</p>
+          
+          <div className="flex gap-4 mt-2 pt-2 border-t border-gray-100">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-[#3b82f6]"></div>
+              <span className="text-xs font-medium text-gray-600">Shelters</span>
             </div>
-          </div>
-          <div className="flex-grow flex flex-col gap-1">
-            <h4 className="font-body-md font-semibold text-charcoal-text">Highland County</h4>
-            <p className="font-label-sm text-on-surface-variant">210 MB</p>
-            <div className="flex gap-2 mt-2">
-              <button className="bg-surface-container-high text-primary font-label-sm px-4 py-2 rounded-full active:scale-95 transition-transform flex items-center gap-1 hover:bg-primary hover:text-white">
-                <span className="material-symbols-outlined text-[18px]">download</span> Download
-              </button>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-[#f59e0b]"></div>
+              <span className="text-xs font-medium text-gray-600">Supplies</span>
             </div>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* Map Container */}
+      <div className="flex-1 w-full bg-surface-container relative z-0">
+        <div className="absolute inset-0 z-0">
+          <MapContainer 
+            center={citizenPosition} 
+            zoom={14} 
+            zoomControl={false}
+            style={{ width: '100%', height: '100%' }}
+          >
+            <TileLayer
+              url="https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
+              subdomains={['mt0', 'mt1', 'mt2', 'mt3']}
+            />
+            
+            {/* Citizen Marker */}
+            <Marker position={citizenPosition} icon={citizenIcon}>
+              <Popup className="border-none rounded-xl overflow-hidden shadow-lg m-0">
+                <div className="p-2">
+                  <h3 className="font-label-sm uppercase text-[#4CAF50] font-bold mb-1">Your Location</h3>
+                  <p className="text-xs text-gray-500 m-0">Accuracy: ± 4.2m</p>
+                </div>
+              </Popup>
+            </Marker>
+
+            {/* Shelter Markers */}
+            {shelters.map(shelter => (
+              <Marker key={`shelter-${shelter.id}`} position={shelter.pos} icon={shelterIcon}>
+                <Popup className="border-none rounded-xl overflow-hidden shadow-lg m-0">
+                  <div className="p-2">
+                    <h3 className="font-label-sm uppercase text-[#3b82f6] font-bold mb-1">{shelter.name}</h3>
+                    <p className="text-xs text-gray-600 mb-1">Capacity: <span className="font-medium text-gray-900">{shelter.capacity}</span></p>
+                    <p className="text-xs text-gray-500 m-0">Status: <span className={shelter.status === 'Open' ? 'text-green-600' : 'text-orange-500'}>{shelter.status}</span></p>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+
+            {/* Supply Markers */}
+            {supplies.map(supply => (
+              <Marker key={`supply-${supply.id}`} position={supply.pos} icon={suppliesIcon}>
+                <Popup className="border-none rounded-xl overflow-hidden shadow-lg m-0">
+                  <div className="p-2">
+                    <h3 className="font-label-sm uppercase text-[#f59e0b] font-bold mb-1">{supply.name}</h3>
+                    <p className="text-xs text-gray-600 m-0">Items: <span className="font-medium text-gray-900">{supply.items}</span></p>
+                  </div>
+                </Popup>
+              </Marker>
+            ))}
+          </MapContainer>
+        </div>
+      </div>
+      
     </div>
   );
 };

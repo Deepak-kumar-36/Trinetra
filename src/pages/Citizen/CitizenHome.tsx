@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 
@@ -8,6 +9,7 @@ export const CitizenHome: React.FC = () => {
   const [sosTimer, setSosTimer] = useState<NodeJS.Timeout | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<string | null>(null);
   const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
+  const navigate = useNavigate();
 
   const handleSosStart = () => {
     if (isSosTriggered) return;
@@ -189,6 +191,20 @@ export const CitizenHome: React.FC = () => {
           <div>
             <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-charcoal-text">Medical Profile</h3>
             <p className="font-label-sm text-on-surface-variant uppercase mt-2">Critical Data</p>
+          </div>
+        </div>
+
+        {/* Show Map Tile */}
+        <div 
+          className="bg-stone-bg border border-outline-variant/30 rounded-xl p-8 flex flex-col justify-between min-h-[200px] hover:border-earth-accent/50 hover:shadow-md transition-all cursor-pointer group"
+          onClick={() => navigate('/citizen/nearby')}
+        >
+          <div className="flex justify-between items-start mb-4">
+            <span className="material-symbols-outlined text-sage-primary text-4xl group-hover:scale-110 transition-transform font-light">map</span>
+          </div>
+          <div>
+            <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-charcoal-text">Show Map</h3>
+            <p className="font-label-sm text-on-surface-variant uppercase mt-2">Shelters & Supplies</p>
           </div>
         </div>
       </section>
