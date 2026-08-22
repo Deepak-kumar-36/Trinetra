@@ -21,12 +21,11 @@ import { VolunteerMissions } from './pages/Volunteer/VolunteerMissions';
 import { VolunteerMap } from './pages/Volunteer/VolunteerMap';
 import { VolunteerProfile } from './pages/Volunteer/VolunteerProfile';
 
-// Coordinator Pages
-const CoordinatorOperations = () => <div className="placeholder-page">Operations Dashboard</div>;
-const CoordinatorIncidents = () => <div className="placeholder-page">Incidents</div>;
-const CoordinatorMap = () => <div className="placeholder-page">Map</div>;
-const CoordinatorMissions = () => <div className="placeholder-page">Missions</div>;
-const CoordinatorResources = () => <div className="placeholder-page">Resources</div>;
+import { CoordinatorOperations } from './pages/Coordinator/CoordinatorOperations';
+import { CoordinatorIncidents } from './pages/Coordinator/CoordinatorIncidents';
+import { CoordinatorMap } from './pages/Coordinator/CoordinatorMap';
+import { CoordinatorMissions } from './pages/Coordinator/CoordinatorMissions';
+import { CoordinatorResources } from './pages/Coordinator/CoordinatorResources';
 
 function App() {
   return (
