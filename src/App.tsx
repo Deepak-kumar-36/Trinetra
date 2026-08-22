@@ -7,23 +7,14 @@ import { CitizenLayout } from './layouts/CitizenLayout';
 import { VolunteerLayout } from './layouts/VolunteerLayout';
 import { CoordinatorLayout } from './layouts/CoordinatorLayout';
 
-// Placeholder Pages (Will be implemented in next phases)
-const Splash = () => <div className="placeholder-page"><h1>TriNetra</h1><p>Disaster Response System</p><a href="/role" className="trinetra-button variant-primary">Continue</a></div>;
-const RoleSelection = () => <div className="placeholder-page">
-  <h2>Select Role</h2>
-  <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-    <a href="/citizen" className="trinetra-button variant-primary">I need help</a>
-    <a href="/volunteer" className="trinetra-button variant-secondary">I want to volunteer</a>
-    <a href="/coordinator" className="trinetra-button variant-secondary">I am a coordinator</a>
-  </div>
-</div>;
+import { Splash } from './pages/Splash';
+import { RoleSelection } from './pages/RoleSelection';
+import { CitizenHome } from './pages/Citizen/CitizenHome';
+import { ReportEmergency } from './pages/Citizen/ReportEmergency';
 
-// Citizen Pages
-const CitizenHome = () => <div className="placeholder-page">Citizen Home</div>;
-const CitizenRequests = () => <div className="placeholder-page">My Requests</div>;
-const CitizenNearby = () => <div className="placeholder-page">Nearby Help</div>;
-const CitizenProfile = () => <div className="placeholder-page">Profile</div>;
-const ReportEmergency = () => <div className="placeholder-page">Report Emergency Flow</div>;
+import { CitizenRequests } from './pages/Citizen/CitizenRequests';
+import { CitizenNearby } from './pages/Citizen/CitizenNearby';
+import { CitizenProfile } from './pages/Citizen/CitizenProfile';
 
 // Volunteer Pages
 const VolunteerHome = () => <div className="placeholder-page">Volunteer Home</div>;
