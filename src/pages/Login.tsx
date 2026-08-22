@@ -32,7 +32,10 @@ export const Login: React.FC = () => {
   // Auto redirect if already logged in
   React.useEffect(() => {
     if (user) {
-      const savedRole = localStorage.getItem('trinetra_role') || roleFromParams || 'citizen';
+      const savedRole = roleFromParams || localStorage.getItem('trinetra_role') || 'citizen';
+      if (roleFromParams) {
+        localStorage.setItem('trinetra_role', savedRole);
+      }
       navigate(`/${savedRole}`);
     }
   }, [user, navigate, roleFromParams]);
