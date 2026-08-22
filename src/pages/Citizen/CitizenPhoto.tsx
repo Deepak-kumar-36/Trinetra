@@ -75,7 +75,7 @@ export const CitizenPhoto = () => {
       const { data, error: insertError } = await supabase
         .from('incidents')
         .insert({
-          reporter_id: user.id,
+          reporter_id: user.uid,
           status: 'reported',
           category: 'general',
           urgency_score: 100,

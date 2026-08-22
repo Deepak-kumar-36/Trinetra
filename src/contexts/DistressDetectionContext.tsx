@@ -334,7 +334,7 @@ export const DistressDetectionProvider: React.FC<{
   }, []);
 
   const submitReport = useCallback(
-    async (opts: { confirmed: boolean | null }) => {
+    async (_opts: { confirmed: boolean | null }) => {
       const triggerDetail = state.matchedKeyword; // '__shout__' or the matched phrase, for the coordinator UI/logs
       dispatch({ type: 'SUBMIT_START' });
 
