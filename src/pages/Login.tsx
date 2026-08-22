@@ -74,8 +74,8 @@ export const Login: React.FC = () => {
       <div className="w-full max-w-md z-10 animate-fade-in flex flex-col items-center bg-surface p-8 rounded-3xl shadow-lg border border-outline-variant">
         
         {/* App Logo */}
-        <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-4 shadow-md">
-          <span className="material-symbols-outlined text-white text-3xl">visibility</span>
+        <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-4 shadow-md overflow-hidden bg-surface p-1">
+          <img src="/logo.png" alt="triNETRA Logo" className="w-full h-full object-contain rounded-xl" />
         </div>
         
         <h1 className="font-headline-lg text-on-surface mb-2 tracking-tight text-center">

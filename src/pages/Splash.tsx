@@ -19,11 +19,8 @@ export const Splash: React.FC = () => {
 
       <main className="relative z-10 flex flex-col items-center justify-center w-full max-w-sm px-margin-mobile animate-fade-in">
         {/* App Icon */}
-        <div className="w-32 h-32 md:w-40 md:h-40 rounded-3xl overflow-hidden shadow-[0_12px_40px_rgba(140,115,85,0.15)] mb-8 pulse-border bg-surface p-1 relative">
-          <div className="absolute inset-1 rounded-2xl bg-gradient-to-br from-tri-saffron via-white to-tri-green opacity-20"></div>
-          <div className="w-full h-full bg-primary flex items-center justify-center rounded-2xl">
-            <span className="material-symbols-outlined text-[80px] text-white">visibility</span>
-          </div>
+        <div className="w-40 h-40 md:w-48 md:h-48 rounded-3xl overflow-hidden shadow-[0_12px_40px_rgba(140,115,85,0.15)] mb-8 pulse-border bg-surface p-1 relative flex items-center justify-center">
+          <img src="/logo.png" alt="triNETRA Logo" className="w-full h-full object-contain rounded-2xl relative z-10" />
         </div>
         
         {/* Logo/Brand Text */}
