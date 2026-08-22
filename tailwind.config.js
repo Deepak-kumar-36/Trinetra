@@ -8,6 +8,8 @@ export default {
   theme: {
     extend: {
       "colors": {
+              "tri-saffron": "#FF9933",
+              "tri-green": "#138808",
               "on-tertiary-fixed-variant": "#474744",
               "primary-fixed-dim": "#b7ccb9",
               "surface-container-lowest": "#ffffff",
