@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 
 export const VolunteerLayout: React.FC = () => {
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isMap = location.pathname.includes('/map');
 
@@ -14,6 +15,7 @@ export const VolunteerLayout: React.FC = () => {
         <header className="fixed top-0 w-full z-50 bg-stone-bg/80 backdrop-blur-md shadow-sm">
           <div className="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop">
             <button 
+              onClick={() => setIsMenuOpen(true)}
               className="text-sage-primary hover:bg-surface-container-high transition-colors active:scale-95 duration-200 p-2 rounded-full flex items-center justify-center"
             >
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>
@@ -96,6 +98,61 @@ export const VolunteerLayout: React.FC = () => {
           </NavLink>
           
         </nav>
+      )}
+
+      {/* Side Menu Drawer */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-[100] flex">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in cursor-pointer"
+            onClick={() => setIsMenuOpen(false)}
+          ></div>
+          
+          {/* Drawer */}
+          <div className="relative w-[75%] max-w-[320px] bg-stone-bg h-full shadow-[24px_0_48px_rgba(0,0,0,0.3)] animate-slide-in-left flex flex-col">
+            <div className="p-6 h-24 border-b border-outline-variant/30 flex justify-between items-start bg-surface-container-lowest">
+              <div>
+                <h2 className="font-headline-sm text-on-surface tracking-tight">Volunteer Menu</h2>
+                <p className="text-xs text-on-surface-variant uppercase tracking-widest mt-1">Status: Active Duty</p>
+              </div>
+              <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full hover:bg-surface-container-highest transition-colors text-on-surface-variant active:scale-95">
+                <span className="material-symbols-outlined text-[24px]">close</span>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+              <NavLink to="/volunteer/missions" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">assignment</span>
+                <span className="font-label-lg">Active Mission Tracker</span>
+              </NavLink>
+              
+              <NavLink to="/volunteer" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">cell_tower</span>
+                <span className="font-label-lg">Live SOS Feed</span>
+              </NavLink>
+              
+              <NavLink to="/volunteer/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">settings</span>
+                <span className="font-label-lg">Settings</span>
+              </NavLink>
+              
+              <div className="my-4 border-t border-outline-variant/30"></div>
+              
+              <NavLink to="/role-selection" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+                <span className="material-symbols-outlined text-primary text-[24px]">swap_horiz</span>
+                <span className="font-label-lg">Switch Protocol</span>
+              </NavLink>
+              
+              <div className="mt-auto pt-4">
+                <NavLink to="/login?role=volunteer" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95">
+                  <span className="material-symbols-outlined text-[24px]">logout</span>
+                  <span className="font-label-lg font-bold">Terminate Session</span>
+                </NavLink>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

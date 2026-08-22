@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
@@ -9,6 +9,8 @@ import { LoadingScreen } from '../components/ui/LoadingScreen';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const role = searchParams.get('role') || 'citizen';
   const { user, loading } = useAuth();
   
   const [isLoginMode, setIsLoginMode] = useState(true);
@@ -20,9 +22,10 @@ export const Login: React.FC = () => {
   // Auto-redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      navigate('/role-selection');
+      const storedRole = localStorage.getItem('trinetra_role') || role;
+      navigate(`/${storedRole}`);
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, role]);
 
   if (loading) {
     return <LoadingScreen message="Checking authorization..." />;
@@ -33,7 +36,8 @@ export const Login: React.FC = () => {
       setAuthLoading(true);
       setError(null);
       await signInWithPopup(auth, googleProvider);
-      navigate('/role-selection');
+      localStorage.setItem('trinetra_role', role);
+      navigate(`/${role}`);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Failed to sign in with Google');
@@ -57,7 +61,8 @@ export const Login: React.FC = () => {
       } else {
         await createUserWithEmailAndPassword(auth, email, password);
       }
-      navigate('/role-selection');
+      localStorage.setItem('trinetra_role', role);
+      navigate(`/${role}`);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Authentication failed');
@@ -75,14 +80,18 @@ export const Login: React.FC = () => {
         
         {/* App Logo */}
         <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-4 shadow-md overflow-hidden bg-surface p-1">
-          <img src="/logo.png" alt="triNETRA Logo" className="w-full h-full object-contain rounded-xl" />
+          <img src="/logo.png" alt="trinetra Logo" className="w-full h-full object-contain rounded-xl" />
         </div>
         
-        <h1 className="font-headline-lg text-on-surface mb-2 tracking-tight text-center">
-          triNETRA
+        <h1 className="font-headline-lg text-on-surface mb-2 tracking-tight text-center capitalize">
+          {role} Portal
         </h1>
         <p className="font-body-md text-on-surface-variant mb-8 text-center">
-          Commanded Serenity. Sign in to continue.
+          {role === 'coordinator' 
+            ? 'Command Center. Authorized personnel only.' 
+            : role === 'volunteer' 
+              ? 'Community Dispatch. Sign in to help.' 
+              : 'Sign in to seek help and report emergencies.'}
         </p>
 
         {error && (

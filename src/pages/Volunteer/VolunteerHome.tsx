@@ -1,8 +1,43 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+interface SOSMessage {
+  id: string;
+  name: string;
+  type: string;
+  message: string;
+  time: string;
+  distance: string;
+  urgency: 'high' | 'critical' | 'medium';
+}
+
+const INITIAL_MESSAGES: SOSMessage[] = [
+  { id: '1', name: 'Priya Sharma', type: 'Medical', message: 'Elderly person having severe asthma attack. Need oxygen immediately.', time: 'Just now', distance: '1.2 km away', urgency: 'critical' },
+  { id: '2', name: 'Rahul Gupta', type: 'Flood', message: 'Water entering ground floor. 3 people trapped including a child.', time: '2 min ago', distance: '2.5 km away', urgency: 'high' },
+];
 
 export const VolunteerHome: React.FC = () => {
   const navigate = useNavigate();
+  const [messages, setMessages] = useState<SOSMessage[]>(INITIAL_MESSAGES);
+  
+  // Simulate incoming messages
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMessages(prev => [
+        {
+          id: Date.now().toString(),
+          name: 'Anonymous',
+          type: 'Security',
+          message: 'Looting reported in sector 4 marketplace. Need immediate intervention.',
+          time: 'Just now',
+          distance: '0.8 km away',
+          urgency: 'high'
+        },
+        ...prev
+      ]);
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <div className="font-body-md antialiased min-h-screen flex flex-col mesh-bg relative pb-32">
@@ -19,49 +54,37 @@ export const VolunteerHome: React.FC = () => {
           {/* Grid Layout */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter">
             
-            {/* Main Incident & Calculation Panel */}
             <div className="md:col-span-7 flex flex-col gap-gutter">
-              {/* Incident Context Card */}
-              <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-sm border border-surface-variant transition-all duration-300 relative overflow-hidden fade-in-up stagger-2">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-[100px] -z-10"></div>
-                <div className="relative z-10">
-                  <h3 className="font-headline-lg text-headline-lg text-primary mb-4">Situation Context</h3>
-                  <p className="font-body-lg text-body-lg text-charcoal-text italic border-l-4 border-earth-accent pl-4 mb-6">
-                    "Three people are trapped on a roof, water is rising, and a child has asthma."
-                  </p>
-                  <div className="flex flex-wrap gap-3">
-                    <span className="bg-primary/10 text-primary px-4 py-2 rounded-full font-label-sm text-label-sm border border-primary/20">Flood rescue</span>
-                    <span className="bg-primary/10 text-primary px-4 py-2 rounded-full font-label-sm text-label-sm border border-primary/20">3 people</span>
-                    <span className="bg-earth-accent/10 text-earth-accent px-4 py-2 rounded-full font-label-sm text-label-sm border border-earth-accent/20">Child present</span>
-                    <span className="bg-error/10 text-error px-4 py-2 rounded-full font-label-sm text-label-sm border border-error/20">Medical concern</span>
-                  </div>
+              <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-sm border border-surface-variant h-full flex flex-col">
+                <div className="flex items-center justify-between mb-6 border-b border-surface-variant pb-4">
+                  <h3 className="font-headline-lg text-headline-lg text-error flex items-center gap-2">
+                    <span className="material-symbols-outlined animate-pulse">sensors</span>
+                    Live SOS Feed
+                  </h3>
+                  <span className="bg-error/10 text-error px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest animate-pulse">Live</span>
                 </div>
-              </div>
-
-              {/* Urgency Score Calculation */}
-              <div className="bg-surface-container-lowest rounded-2xl p-8 shadow-sm border border-surface-variant transition-all duration-300 relative overflow-hidden fade-in-up stagger-3">
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-6 border-b border-surface-variant pb-4">
-                    <h3 className="font-headline-lg text-headline-lg text-primary">Urgency Score</h3>
-                    <div className="flex items-end gap-1 text-error">
-                      <span className="font-display-lg text-display-lg leading-none">92</span>
-                      <span className="font-body-md text-body-md text-on-surface-variant pb-1">/100</span>
+                
+                <div className="flex-1 overflow-y-auto pr-2 space-y-4 flex flex-col">
+                  {messages.map((msg, index) => (
+                    <div key={msg.id} className={`p-4 rounded-xl border-l-4 bg-surface shadow-sm transition-all duration-500 animate-slide-in-left ${msg.urgency === 'critical' ? 'border-error' : msg.urgency === 'high' ? 'border-primary' : 'border-earth-accent'}`} style={{ animationDelay: `${index * 100}ms` }}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-on-surface">{msg.name}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-sm ${msg.urgency === 'critical' ? 'bg-error/10 text-error' : msg.urgency === 'high' ? 'bg-primary/10 text-primary' : 'bg-earth-accent/10 text-earth-accent'}`}>{msg.type}</span>
+                        </div>
+                        <span className="text-xs text-on-surface-variant font-medium">{msg.time}</span>
+                      </div>
+                      <p className="text-on-surface-variant text-sm mb-3">"{msg.message}"</p>
+                      <div className="flex justify-between items-center mt-3 pt-3 border-t border-surface-variant/50">
+                        <span className="text-xs text-on-surface-variant flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[14px]">location_on</span> {msg.distance}
+                        </span>
+                        <button onClick={() => navigate('/volunteer/missions')} className="text-primary hover:text-primary-fixed text-sm font-bold flex items-center gap-1 active:scale-95 transition-transform">
+                          Respond <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                  <div className="space-y-4 font-body-md text-body-md">
-                    <div className="flex justify-between items-center bg-surface p-4 rounded-lg shadow-sm border border-surface-variant/50">
-                      <span className="flex items-center gap-2"><span className="material-symbols-outlined text-earth-accent">water_drop</span> Rising water</span>
-                      <span className="font-bold text-error">+25</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-surface p-4 rounded-lg shadow-sm border border-surface-variant/50">
-                      <span className="flex items-center gap-2"><span className="material-symbols-outlined text-earth-accent">house</span> People trapped</span>
-                      <span className="font-bold text-earth-accent">+25</span>
-                    </div>
-                    <div className="flex justify-between items-center bg-surface p-4 rounded-lg shadow-sm border border-surface-variant/50">
-                      <span className="flex items-center gap-2"><span className="material-symbols-outlined text-earth-accent">child_care</span> Child involved</span>
-                      <span className="font-bold text-earth-accent">+20</span>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>

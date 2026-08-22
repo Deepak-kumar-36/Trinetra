@@ -3,6 +3,8 @@ import { supabase } from '../../lib/supabase';
 
 export const CoordinatorOperations: React.FC = () => {
   const [incidents, setIncidents] = useState<any[]>([]);
+  const [activeDispatchId, setActiveDispatchId] = useState<string | null>(null);
+  const [dispatchedIncidents, setDispatchedIncidents] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetchIncidents = async () => {
@@ -96,7 +98,9 @@ export const CoordinatorOperations: React.FC = () => {
                     <span className={`w-3 h-3 rounded-full ${incident.urgencyScore >= 80 ? 'bg-error animate-pulse' : incident.urgencyScore >= 50 ? 'bg-earth-accent' : 'bg-sage-primary'}`}></span>
                     <span className="font-bold text-on-surface">Score: {incident.urgencyScore}</span>
                   </div>
-                  <span className="text-xs bg-surface-variant text-on-surface-variant px-2 py-1 rounded-md">{incident.status || 'Received'}</span>
+                  <span className={`text-xs px-2 py-1 rounded-md ${dispatchedIncidents[incident.id] ? 'bg-sage-primary/20 text-sage-primary font-bold' : 'bg-surface-variant text-on-surface-variant'}`}>
+                    {dispatchedIncidents[incident.id] ? 'Assigned' : incident.status || 'Received'}
+                  </span>
                 </div>
                 
                 <p className="text-on-surface font-body-md line-clamp-2">{incident.description}</p>
@@ -119,11 +123,56 @@ export const CoordinatorOperations: React.FC = () => {
                   </div>
                 )}
                 
-                <div className="mt-2 pt-3 border-t border-outline-variant/20 flex justify-end">
-                  <button className="text-primary font-label-sm uppercase tracking-wider hover:bg-primary/10 px-4 py-2 rounded-lg transition-colors">
-                    Dispatch Team
-                  </button>
-                </div>
+                {dispatchedIncidents[incident.id] ? (
+                  <div className="mt-2 pt-3 border-t border-outline-variant/20 flex items-center justify-between">
+                    <span className="text-sm font-bold text-sage-primary flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[16px]">check_circle</span> Dispatched: {dispatchedIncidents[incident.id]}
+                    </span>
+                  </div>
+                ) : activeDispatchId === incident.id ? (
+                  <div className="mt-2 pt-3 border-t border-outline-variant/20 flex flex-col gap-2 animate-fade-in">
+                    <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Select Unit to Deploy</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button 
+                        onClick={() => {
+                          setDispatchedIncidents(prev => ({ ...prev, [incident.id]: 'Medical Rescue Alpha' }));
+                          setActiveDispatchId(null);
+                        }}
+                        className="p-2 bg-error/10 text-error hover:bg-error/20 border border-error/20 rounded-lg text-sm font-medium transition-colors text-left"
+                      >
+                        Medical Alpha
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setDispatchedIncidents(prev => ({ ...prev, [incident.id]: 'Boat Unit 4' }));
+                          setActiveDispatchId(null);
+                        }}
+                        className="p-2 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 rounded-lg text-sm font-medium transition-colors text-left"
+                      >
+                        Boat Unit 4
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setDispatchedIncidents(prev => ({ ...prev, [incident.id]: 'Search & Rescue Charlie' }));
+                          setActiveDispatchId(null);
+                        }}
+                        className="p-2 bg-earth-accent/10 text-earth-accent hover:bg-earth-accent/20 border border-earth-accent/20 rounded-lg text-sm font-medium transition-colors text-left col-span-2"
+                      >
+                        S&R Charlie (Ground)
+                      </button>
+                    </div>
+                    <button onClick={() => setActiveDispatchId(null)} className="text-xs text-on-surface-variant text-center mt-2 hover:text-on-surface underline">Cancel</button>
+                  </div>
+                ) : (
+                  <div className="mt-2 pt-3 border-t border-outline-variant/20 flex justify-end">
+                    <button 
+                      onClick={() => setActiveDispatchId(incident.id)}
+                      className="text-primary font-label-sm uppercase tracking-wider hover:bg-primary/10 px-4 py-2 rounded-lg transition-colors active:scale-95 flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">send</span> Assign Task
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}

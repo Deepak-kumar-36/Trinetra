@@ -14,8 +14,8 @@ export const RoleSelection: React.FC = () => {
         
         {/* Header */}
         <div className="mb-12 flex flex-col items-center text-center">
-          <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-6 shadow-md overflow-hidden bg-surface p-1 pulse-border">
-            <img src="/logo.png" alt="triNETRA Logo" className="w-full h-full object-contain rounded-xl" />
+          <div className="w-16 h-16 rounded-xl flex items-center justify-center shadow-md overflow-hidden bg-surface p-1">
+            <img src="/logo.png" alt="trinetra Logo" className="w-full h-full object-contain rounded-xl" />
           </div>
           <h1 className="font-headline-lg text-on-surface mb-2 tracking-tight">Select Protocol</h1>
           <p className="font-body-md text-on-surface-variant">Identify your role to access the correct operational dashboard.</p>
@@ -24,7 +24,7 @@ export const RoleSelection: React.FC = () => {
         {/* Options */}
         <div className="w-full space-y-4">
           <button 
-            onClick={() => navigate('/citizen')}
+            onClick={() => navigate('/login?role=citizen')}
             className="w-full flex items-center gap-5 p-6 bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm hover:shadow-md hover:border-primary transition-all active:scale-[0.98] group text-left fade-in-up stagger-1"
           >
             <div className="w-12 h-12 bg-secondary-container text-on-secondary-container rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
@@ -38,7 +38,7 @@ export const RoleSelection: React.FC = () => {
           </button>
 
           <button 
-            onClick={() => navigate('/volunteer')}
+            onClick={() => navigate('/login?role=volunteer')}
             className="w-full flex items-center gap-5 p-6 bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm hover:shadow-md hover:border-primary transition-all active:scale-[0.98] group text-left fade-in-up stagger-2"
           >
             <div className="w-12 h-12 bg-primary-fixed text-on-primary-fixed-variant rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
@@ -52,7 +52,7 @@ export const RoleSelection: React.FC = () => {
           </button>
 
           <button 
-            onClick={() => navigate('/coordinator')}
+            onClick={() => navigate('/login?role=coordinator')}
             className="w-full flex items-center gap-5 p-6 bg-surface-container-lowest rounded-2xl border border-surface-variant shadow-sm hover:shadow-md hover:border-error transition-all active:scale-[0.98] group text-left fade-in-up stagger-3"
           >
             <div className="w-12 h-12 bg-error-container text-on-error-container rounded-xl flex items-center justify-center group-hover:bg-error group-hover:text-white transition-colors">

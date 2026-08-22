@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation } from 'react-router-dom';
 
 export const CoordinatorLayout: React.FC = () => {
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
 
   const isMap = location.pathname.includes('/map');
 
@@ -14,6 +16,7 @@ export const CoordinatorLayout: React.FC = () => {
         <header className="fixed top-0 w-full z-50 bg-stone-bg/80 backdrop-blur-md shadow-sm">
           <div className="flex justify-between items-center h-20 px-margin-mobile md:px-margin-desktop">
             <button 
+              onClick={() => setIsMenuOpen(true)}
               className="text-sage-primary hover:bg-surface-container-high transition-colors active:scale-95 duration-200 p-2 rounded-full flex items-center justify-center"
             >
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>
@@ -97,6 +100,99 @@ export const CoordinatorLayout: React.FC = () => {
           </NavLink>
           
         </nav>
+      )}
+
+      {/* Side Menu Drawer */}
+      {isMenuOpen && (
+        <div className="fixed inset-0 z-[100] flex">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/60 backdrop-blur-md animate-fade-in cursor-pointer"
+            onClick={() => setIsMenuOpen(false)}
+          ></div>
+          
+          {/* Drawer */}
+          <div className="relative w-[80%] max-w-[360px] bg-stone-bg border-r border-outline-variant h-full shadow-[32px_0_64px_rgba(0,0,0,0.5)] animate-slide-in-left flex flex-col">
+            <div className="p-6 pb-4 border-b border-outline-variant/30 bg-surface-container-lowest">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="font-headline-sm text-on-surface tracking-tight uppercase tracking-widest text-error">Command Menu</h2>
+                <button onClick={() => setIsMenuOpen(false)} className="p-2 rounded-full hover:bg-surface-container-highest transition-colors text-on-surface-variant active:scale-95">
+                  <span className="material-symbols-outlined text-[24px]">close</span>
+                </button>
+              </div>
+              
+              {/* Profile Snippet */}
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary">
+                  <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Coordinator" className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <h3 className="font-label-lg text-on-surface">Cdr. Alan Vance</h3>
+                  <p className="text-xs text-on-surface-variant uppercase tracking-widest">ID: CMD-0932</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+              <h4 className="font-label-sm text-on-surface-variant uppercase tracking-widest mt-4 mb-2 px-4 text-xs">Operations</h4>
+              
+              <button 
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setActiveNotification({ title: 'Global Broadcast Sent', message: 'All units have been alerted to standby for severe weather incoming.' });
+                  setTimeout(() => setActiveNotification(null), 5000);
+                }}
+                className="w-full flex items-center justify-between p-4 rounded-xl hover:bg-error-container/20 border border-transparent hover:border-error/30 transition-colors text-on-surface active:scale-95 group text-left"
+              >
+                <div className="flex items-center gap-4">
+                  <span className="material-symbols-outlined text-error text-[24px] group-hover:animate-pulse">cell_tower</span>
+                  <span className="font-label-lg">Global Broadcast</span>
+                </div>
+              </button>
+              
+              <NavLink to="/coordinator/incidents" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">list_alt</span>
+                <span className="font-label-lg">Dispatch Logs</span>
+              </NavLink>
+
+              <NavLink to="/coordinator" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">settings_system_daydream</span>
+                <span className="font-label-lg">System Diagnostics</span>
+              </NavLink>
+
+              <h4 className="font-label-sm text-on-surface-variant uppercase tracking-widest mt-6 mb-2 px-4 text-xs">Account</h4>
+              
+              <NavLink to="/role-selection" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+                <span className="material-symbols-outlined text-primary text-[24px]">swap_horiz</span>
+                <span className="font-label-lg">Switch Protocol</span>
+              </NavLink>
+              
+              <div className="mt-auto pt-4">
+                <NavLink to="/login?role=coordinator" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95">
+                  <span className="material-symbols-outlined text-[24px]">logout</span>
+                  <span className="font-label-lg font-bold">Terminate Session</span>
+                </NavLink>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification for Global Broadcast */}
+      {activeNotification && (
+        <div className="fixed top-24 right-4 md:right-8 z-[110] animate-[slide-in-right_0.3s_ease-out_forwards] w-80">
+          <div className="bg-surface-container-highest border-l-4 border-error shadow-[0_12px_40px_rgba(0,0,0,0.3)] rounded-xl p-4 flex gap-4 items-start relative overflow-hidden">
+            <div className="absolute inset-0 bg-error/5 pointer-events-none"></div>
+            <span className="material-symbols-outlined text-error text-2xl shrink-0">campaign</span>
+            <div className="flex-1">
+              <h4 className="font-label-sm uppercase tracking-wider text-error font-bold">{activeNotification.title}</h4>
+              <p className="text-sm text-on-surface mt-1 leading-relaxed">{activeNotification.message}</p>
+            </div>
+            <button onClick={() => setActiveNotification(null)} className="ml-auto text-on-surface-variant hover:text-on-surface p-1 rounded-full hover:bg-surface-variant transition-colors">
+              <span className="material-symbols-outlined text-sm">close</span>
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -5,6 +5,8 @@ export const CitizenLayout: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSafe, setIsSafe] = useState(false);
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
 
   const isReport = location.pathname.includes('/report');
 
@@ -118,6 +120,42 @@ export const CitizenLayout: React.FC = () => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+              <div className="bg-surface-container border border-outline-variant/30 rounded-xl p-4 mb-4 shadow-inner">
+                <h3 className="font-label-sm uppercase tracking-wider text-on-surface-variant mb-4">Safety Status</h3>
+                
+                {/* Mark as Safe Toggle */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className={`material-symbols-outlined ${isSafe ? 'text-sage-primary' : 'text-on-surface-variant'}`}>
+                      {isSafe ? 'verified_user' : 'gpp_maybe'}
+                    </span>
+                    <span className="font-label-md text-on-surface">Mark as Safe</span>
+                  </div>
+                  <button 
+                    onClick={() => setIsSafe(!isSafe)}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${isSafe ? 'bg-sage-primary' : 'bg-surface-variant'}`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${isSafe ? 'left-6.5 translate-x-[22px]' : 'left-0.5'}`}></div>
+                  </button>
+                </div>
+                
+                {/* Broadcast Location Toggle */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`material-symbols-outlined ${isBroadcasting ? 'text-error animate-pulse' : 'text-on-surface-variant'}`}>
+                      my_location
+                    </span>
+                    <span className="font-label-md text-on-surface">Live Location Sync</span>
+                  </div>
+                  <button 
+                    onClick={() => setIsBroadcasting(!isBroadcasting)}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${isBroadcasting ? 'bg-error' : 'bg-surface-variant'}`}
+                  >
+                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-all ${isBroadcasting ? 'left-6.5 translate-x-[22px]' : 'left-0.5'}`}></div>
+                  </button>
+                </div>
+              </div>
+
               <Link to="/citizen/settings" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
                 <span className="material-symbols-outlined text-sage-primary text-[24px]">settings</span>
                 <span className="font-label-lg">Settings</span>
@@ -133,16 +171,23 @@ export const CitizenLayout: React.FC = () => {
               
               <div className="my-4 border-t border-outline-variant/30"></div>
               
-              <Link to="/" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
+              <Link to="/role-selection" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95">
                 <span className="material-symbols-outlined text-primary text-[24px]">swap_horiz</span>
                 <span className="font-label-lg">Switch Role</span>
               </Link>
               
               <div className="mt-auto pt-4">
-                <Link to="/login" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95">
+                <button 
+                  onClick={() => {
+                    localStorage.removeItem('trinetra_role');
+                    setIsMenuOpen(false);
+                    navigate('/login?role=citizen');
+                  }} 
+                  className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95"
+                >
                   <span className="material-symbols-outlined text-[24px]">logout</span>
-                  <span className="font-label-lg font-bold">Sign Out to Login Page</span>
-                </Link>
+                  <span className="font-label-lg font-bold">Sign Out</span>
+                </button>
               </div>
             </div>
           </div>

@@ -1,16 +1,24 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Splash: React.FC = () => {
   const navigate = useNavigate();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    // Simulate initialization and then redirect to role selection
+    if (loading) return;
+    
     const timer = setTimeout(() => {
-      navigate('/login');
-    }, 3000);
+      if (user) {
+        const storedRole = localStorage.getItem('trinetra_role') || 'citizen';
+        navigate(`/${storedRole}`);
+      } else {
+        navigate('/role-selection');
+      }
+    }, 2000); // reduced to 2s for better UX
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, user, loading]);
 
   return (
     <div className="h-full bg-stone-bg text-on-surface antialiased overflow-hidden flex flex-col items-center justify-center relative min-h-screen">
@@ -20,7 +28,7 @@ export const Splash: React.FC = () => {
       <main className="relative z-10 flex flex-col items-center justify-center w-full max-w-sm px-margin-mobile animate-fade-in">
         {/* App Icon */}
         <div className="w-40 h-40 md:w-48 md:h-48 rounded-3xl overflow-hidden shadow-[0_12px_40px_rgba(140,115,85,0.15)] mb-8 pulse-border bg-surface p-1 relative flex items-center justify-center">
-          <img src="/logo.png" alt="triNETRA Logo" className="w-full h-full object-contain rounded-2xl relative z-10" />
+          <img src="/logo.png" alt="trinetra Logo" className="w-full h-full object-contain rounded-2xl relative z-10" />
         </div>
         
         {/* Logo/Brand Text */}
@@ -28,7 +36,7 @@ export const Splash: React.FC = () => {
           <span className="text-[#FF9933]">t</span>
           <span className="text-[#FFFFFF] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">r</span>
           <span className="text-[#138808]">i</span>
-          <span className="font-bold text-primary ml-0.5 uppercase">NETRA</span>
+          <span className="font-bold text-primary ml-0.5 lowercase">netra</span>
         </h1>
         <p className="font-body-md text-on-surface-variant text-center opacity-80 mb-16">
           Commanded Serenity
