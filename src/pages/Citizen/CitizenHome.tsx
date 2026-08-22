@@ -42,6 +42,7 @@ export const CitizenHome: React.FC = () => {
     else if (category === 'Medical') authority = 'EMS & Nearest Hospital';
     else if (category === 'Security') authority = 'Police Department';
     else if (category === 'Flood') authority = 'Disaster Response Force';
+    else if (category === 'Other') authority = 'General Emergency Services';
 
     setActiveNotification({
       title: 'Authorities Notified',
@@ -70,7 +71,8 @@ export const CitizenHome: React.FC = () => {
       'Fire': ['Report Building Fire', 'Report Wildfire', 'Report Vehicle Fire', 'Request Evacuation'],
       'Medical': ['Request Ambulance', 'Report Severe Injury', 'Cardiac Emergency', 'Require First Aid'],
       'Flood': ['Report Rising Water', 'Request Evacuation', 'Report Blocked Road', 'Property Damage'],
-      'Security': ['Report Intruder', 'Request Police', 'Report Suspicious Activity', 'Active Threat']
+      'Security': ['Report Intruder', 'Request Police', 'Report Suspicious Activity', 'Active Threat'],
+      'Other': ['Traffic Accident', 'Animal Emergency', 'Infrastructure Damage', 'Miscellaneous / Unknown']
     };
 
     const options = optionsMap[selectedIncident] || [];
@@ -158,6 +160,10 @@ export const CitizenHome: React.FC = () => {
           <button onClick={() => handleIncidentSelect('Security')} className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 hover:border-earth-accent/50 hover:shadow-md transition-all active:scale-95 text-charcoal-text">
             <span className="material-symbols-outlined text-4xl text-sage-primary font-light">shield</span>
             <span className="font-label-sm uppercase tracking-wide">Security</span>
+          </button>
+          <button onClick={() => handleIncidentSelect('Other')} className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-8 flex flex-col items-center justify-center gap-4 hover:border-earth-accent/50 hover:shadow-md transition-all active:scale-95 text-charcoal-text col-span-2">
+            <span className="material-symbols-outlined text-4xl text-sage-primary font-light">more_horiz</span>
+            <span className="font-label-sm uppercase tracking-wide">Other</span>
           </button>
         </div>
       </section>
