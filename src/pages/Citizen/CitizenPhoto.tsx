@@ -119,26 +119,26 @@ export const CitizenPhoto = () => {
   return (
     <div className="flex flex-col h-full bg-surface-container-lowest overflow-hidden relative">
       {/* Header */}
-      <div className="bg-primary text-on-primary p-6 rounded-b-[2rem] shadow-md z-10 flex flex-col pt-12">
-        <h1 className="font-display-lg text-[2.5rem] leading-tight mb-2">Photo SOS</h1>
-        <p className="font-body-lg text-primary-container/80">
-          Capture an emergency to instantly dispatch volunteers to your exact location.
+      <div className="pt-12 px-6 pb-2 z-10">
+        <h1 className="font-headline-lg-mobile md:font-headline-lg text-on-surface mb-2">Photo SOS</h1>
+        <p className="font-body-md text-on-surface-variant">
+          Upload visual evidence of an emergency to instantly dispatch volunteers to your location.
         </p>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6 relative z-0">
+      <div className="flex-1 flex flex-col items-center p-6 gap-4 relative z-0">
         
         {isUploading ? (
-          <div className="flex flex-col items-center justify-center p-10 bg-surface-container rounded-3xl w-full max-w-sm text-center shadow-lg animate-pulse">
-            <span className="material-symbols-outlined text-[64px] text-primary animate-spin mb-4">refresh</span>
-            <h3 className="font-headline-sm text-on-surface font-bold">Uploading Alert...</h3>
-            <p className="font-body-md text-on-surface-variant mt-2">Sending location and photo to the Coordinator.</p>
+          <div className="flex flex-col items-center justify-center p-10 bg-surface-container-lowest rounded-2xl w-full max-w-sm text-center border border-surface-variant shadow-[0_4px_32px_rgba(140,115,85,0.06)] animate-pulse mt-4">
+            <span className="material-symbols-outlined text-[48px] text-primary animate-spin mb-4">refresh</span>
+            <h3 className="font-headline-sm text-on-surface font-bold">Uploading Alert</h3>
+            <p className="font-body-sm text-on-surface-variant mt-2">Securing location & transmitting photo...</p>
           </div>
         ) : (
-          <>
+          <div className="w-full max-w-sm space-y-4 mt-4">
             {error && (
-              <div className="w-full bg-error-container text-on-error-container p-4 rounded-xl border border-error/30 mb-2 flex items-start gap-3">
+              <div className="w-full bg-error-container text-on-error-container p-4 rounded-xl flex items-start gap-3">
                 <span className="material-symbols-outlined text-error mt-0.5">error</span>
                 <p className="font-body-md font-medium text-sm">{error}</p>
               </div>
@@ -146,25 +146,32 @@ export const CitizenPhoto = () => {
             
             <button 
               onClick={() => cameraInputRef.current?.click()}
-              className="w-full max-w-sm aspect-[4/3] bg-error text-white rounded-[2rem] shadow-[0_8px_30px_rgba(200,50,50,0.3)] hover:bg-error/90 active:scale-95 transition-all flex flex-col items-center justify-center gap-4 relative overflow-hidden group"
+              className="w-full h-32 bg-surface-container-lowest text-on-surface rounded-2xl shadow-[0_4px_32px_rgba(140,115,85,0.06)] border border-surface-variant hover:bg-surface-container-high hover:border-primary/50 active:scale-[0.98] transition-all flex items-center justify-start px-6 gap-5 group"
             >
-              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              <span className="material-symbols-outlined text-[72px] drop-shadow-md">photo_camera</span>
-              <span className="font-display-sm text-2xl font-bold uppercase tracking-wider drop-shadow-md">Click Photo</span>
-              <span className="font-label-sm opacity-80 uppercase tracking-widest text-xs">Live Capture</span>
+              <div className="w-14 h-14 rounded-full bg-primary-fixed/20 flex items-center justify-center group-hover:bg-primary-fixed transition-colors">
+                <span className="material-symbols-outlined text-[28px] text-primary group-hover:text-on-primary-fixed transition-colors">photo_camera</span>
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="font-headline-sm font-bold text-on-surface tracking-tight">Capture Photo</span>
+                <span className="font-body-sm text-on-surface-variant mt-0.5">Take a live photo</span>
+              </div>
+              <span className="material-symbols-outlined ml-auto text-on-surface-variant opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">chevron_right</span>
             </button>
 
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="w-full max-w-sm h-[100px] bg-surface-container text-on-surface rounded-2xl shadow-sm border border-outline-variant/50 hover:bg-surface-container-high active:scale-95 transition-all flex items-center justify-center gap-4 relative overflow-hidden"
+              className="w-full h-32 bg-surface-container-lowest text-on-surface rounded-2xl shadow-[0_4px_32px_rgba(140,115,85,0.06)] border border-surface-variant hover:bg-surface-container-high hover:border-primary/50 active:scale-[0.98] transition-all flex items-center justify-start px-6 gap-5 group"
             >
-              <span className="material-symbols-outlined text-[32px] text-primary">collections</span>
-              <div className="flex flex-col text-left">
-                <span className="font-headline-sm font-bold tracking-tight">Select from Gallery</span>
-                <span className="font-label-sm text-on-surface-variant uppercase tracking-wider text-[10px]">Upload existing image</span>
+              <div className="w-14 h-14 rounded-full bg-surface-variant flex items-center justify-center group-hover:bg-secondary-container transition-colors">
+                <span className="material-symbols-outlined text-[28px] text-on-surface-variant group-hover:text-on-secondary-container transition-colors">collections</span>
               </div>
+              <div className="flex flex-col text-left">
+                <span className="font-headline-sm font-bold text-on-surface tracking-tight">Select from Gallery</span>
+                <span className="font-body-sm text-on-surface-variant mt-0.5">Upload existing image</span>
+              </div>
+              <span className="material-symbols-outlined ml-auto text-on-surface-variant opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all">chevron_right</span>
             </button>
-          </>
+          </div>
         )}
 
         {/* Hidden inputs */}
