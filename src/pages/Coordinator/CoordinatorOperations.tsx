@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { generateUUID } from '../../lib/utils';
@@ -7,6 +7,8 @@ export const CoordinatorOperations: React.FC = () => {
   const { user } = useAuth();
   const [incidents, setIncidents] = useState<any[]>([]);
   const [dispatchedIncidents] = useState<Record<string, string>>({});
+  const [incomingAlert, setIncomingAlert] = useState<any>(null);
+  const prevCountRef = useRef(0);
 
   const renderTranscript = (transcript: string) => {
     if (!transcript) return 'Emergency Reported';
@@ -32,20 +34,63 @@ export const CoordinatorOperations: React.FC = () => {
   const [isAssigning, setIsAssigning] = useState(false);
   const [dispatchTab, setDispatchTab] = useState<'resources' | 'volunteers'>('resources');
 
+  const playAlertSound = () => {
+    try {
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.type = 'sine'; osc.frequency.value = 880;
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.start(); setTimeout(() => osc.stop(), 500);
+    } catch(e) {}
+  };
+
   const fetchIncidents = async () => {
+    // Merge localStorage incidents
+    let localIncidents: any[] = [];
+    try {
+      const stored = localStorage.getItem('trinetra_live_incidents');
+      if (stored) localIncidents = JSON.parse(stored);
+    } catch(e) {}
+
     const { data, error } = await supabase
       .from('incidents')
       .select('*')
       .order('created_at', { ascending: false })
       .limit(20);
     
+    let merged = [...localIncidents];
     if (!error && data) {
-      setIncidents(data);
+      data.forEach(inc => {
+        if (!merged.find(m => m.id === inc.id)) merged.push(inc);
+      });
     }
+
+    // Sort by urgency descending
+    merged.sort((a, b) => (b.urgency_score || b.urgency_band || 0) - (a.urgency_score || a.urgency_band || 0));
+
+    // Detect new incoming incidents and show alert
+    if (prevCountRef.current > 0 && merged.length > prevCountRef.current) {
+      const newest = merged[0];
+      setIncomingAlert(newest);
+      playAlertSound();
+      if ('vibrate' in navigator) navigator.vibrate([200, 100, 200]);
+      setTimeout(() => setIncomingAlert(null), 8000);
+    }
+    prevCountRef.current = merged.length;
+
+    setIncidents(merged);
   };
 
   useEffect(() => {
     fetchIncidents();
+
+    // Listen for localStorage changes (same-window + cross-tab)
+    const handleStorageChange = () => fetchIncidents();
+    window.addEventListener('storage', handleStorageChange);
+    const pollInterval = setInterval(fetchIncidents, 3000);
 
     // Subscribe to realtime changes
     const channel = supabase
@@ -60,6 +105,8 @@ export const CoordinatorOperations: React.FC = () => {
       .subscribe();
 
     return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(pollInterval);
       supabase.removeChannel(channel);
     };
   }, []);
@@ -176,6 +223,45 @@ export const CoordinatorOperations: React.FC = () => {
       </header>
 
       <main className="w-full max-w-[600px] mt-touch-target mb-[120px] px-margin-mobile py-gutter flex flex-col gap-6 h-full z-10">
+        {/* Incoming SOS Alert Banner */}
+        {incomingAlert && (
+          <div className="fixed top-[100px] left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-[500px] animate-[slide-in-up_0.3s_ease-out]">
+            <div className="bg-error text-white rounded-2xl p-5 shadow-[0_20px_60px_rgba(200,30,30,0.5)] border-2 border-white/20 relative overflow-hidden">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_50%,rgba(255,255,255,0.15),transparent)] pointer-events-none"></div>
+              <div className="flex items-start gap-4 relative z-10">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center shrink-0 animate-pulse">
+                  <span className="material-symbols-outlined text-[28px]">emergency</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-bold text-xs uppercase tracking-widest">🚨 INCOMING SOS</span>
+                    <span className="w-2 h-2 rounded-full bg-white animate-ping"></span>
+                  </div>
+                  <p className="text-sm font-medium opacity-90 line-clamp-2">
+                    {incomingAlert.category === 'voice_distress'
+                      ? 'Voice Distress SOS triggered! Citizen requires immediate help.'
+                      : `New emergency reported — Urgency: ${incomingAlert.urgency_score || incomingAlert.urgency_band || 'High'}`
+                    }
+                  </p>
+                  <div className="flex gap-2 mt-3">
+                    <button
+                      onClick={() => { handleDispatchClick(incomingAlert); setIncomingAlert(null); }}
+                      className="bg-white text-error px-4 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-white/90 transition-colors active:scale-95 flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">send</span> Dispatch Now
+                    </button>
+                    <button
+                      onClick={() => setIncomingAlert(null)}
+                      className="bg-white/20 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide hover:bg-white/30 transition-colors active:scale-95"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Threat Level / Disaster Rating Bar */}
         <div className="w-full bg-surface/80 backdrop-blur-md rounded-xl p-6 flex flex-col gap-4 shadow-sm border border-outline-variant/30 mt-2 transition-all duration-300 hover:shadow-md">
           <div className="flex justify-between items-end">
