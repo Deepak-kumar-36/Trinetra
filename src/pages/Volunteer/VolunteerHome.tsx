@@ -38,6 +38,12 @@ export const VolunteerHome: React.FC = () => {
   const [isSelfAssigning, setIsSelfAssigning] = useState(false);
 
   const fetchActiveIncidents = async () => {
+    let localIncidents: any[] = [];
+    try {
+      const stored = localStorage.getItem('trinetra_live_incidents');
+      if (stored) localIncidents = JSON.parse(stored);
+    } catch(e) {}
+
     const { data, error } = await supabase
       .from('incidents')
       .select('*')
@@ -45,9 +51,17 @@ export const VolunteerHome: React.FC = () => {
       .order('created_at', { ascending: false })
       .limit(10);
       
+    let merged = [...localIncidents];
     if (!error && data) {
-      setActiveIncidents(data);
+      // Merge by ID to avoid duplicates
+      data.forEach(inc => {
+        if (!merged.find(m => m.id === inc.id)) merged.push(inc);
+      });
     }
+    
+    // Sort combined incidents by urgency score descending
+    merged.sort((a, b) => (b.urgency_score || b.urgency_band || 0) - (a.urgency_score || a.urgency_band || 0));
+    setActiveIncidents(merged);
   };
 
   const fetchMission = async (rId: string) => {
@@ -113,6 +127,11 @@ export const VolunteerHome: React.FC = () => {
   useEffect(() => {
     fetchActiveIncidents();
 
+    const handleStorageChange = () => fetchActiveIncidents();
+    window.addEventListener('storage', handleStorageChange);
+    // Polling fallback for cross-component local storage updates that don't trigger 'storage' event on same window
+    const pollInterval = setInterval(fetchActiveIncidents, 3000);
+
     const incidentsChannel = supabase
       .channel('volunteer-incidents')
       .on(
@@ -126,6 +145,8 @@ export const VolunteerHome: React.FC = () => {
       .subscribe();
 
     return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(pollInterval);
       supabase.removeChannel(incidentsChannel);
     };
   }, []);
@@ -152,37 +173,39 @@ export const VolunteerHome: React.FC = () => {
   }, [responderId]);
 
   const handleSelfAssign = async (targetIncident: any) => {
-    if (!responderId || !user) return;
     setIsSelfAssigning(true);
     
-    // Create mission
-    const { error: missionError } = await supabase.from('missions').insert([{
-      incident_id: targetIncident.id,
-      responder_id: responderId,
-      assigned_by: generateUUID(user.uid), // Self-assigned
-      status: 'accepted' // Auto-accept since they self-assigned
-    }]).select('id').single();
+    // Fallback: save to local storage immediately so UI progresses even if DB fails
+    localStorage.setItem('volunteer_active_mission', JSON.stringify(targetIncident));
     
-    if (missionError) {
-      console.error("Failed to self-assign mission:", missionError);
-      setIsSelfAssigning(false);
-      return;
+    if (responderId && user) {
+      // Create mission
+      const { error: missionError } = await supabase.from('missions').insert([{
+        incident_id: targetIncident.id,
+        responder_id: responderId,
+        assigned_by: generateUUID(user.uid), // Self-assigned
+        status: 'accepted' // Auto-accept since they self-assigned
+      }]).select('id').single();
+      
+      if (!missionError) {
+        // Update incident status
+        await supabase.from('incidents').update({ status: 'assigned' }).eq('id', targetIncident.id);
+        
+        // Notify citizen
+        await supabase.from('notifications').insert([{
+          user_id: targetIncident.reporter_id,
+          type: 'resource_dispatched',
+          priority: 'high',
+          related_incident_id: targetIncident.id,
+          message: `A Volunteer Team has dispatched to your location and is en route!`,
+        }]);
+      } else {
+        console.warn("Supabase mission insertion failed. Relying on local storage fallback.", missionError);
+      }
     }
     
-    // Update incident status
-    await supabase.from('incidents').update({ status: 'assigned' }).eq('id', targetIncident.id);
-    
-    // Notify citizen
-    await supabase.from('notifications').insert([{
-      user_id: targetIncident.reporter_id,
-      type: 'resource_dispatched',
-      priority: 'high',
-      related_incident_id: targetIncident.id,
-      message: `A Volunteer Team has dispatched to your location and is en route!`,
-    }]);
-    
     setIsSelfAssigning(false);
-    navigate('/volunteer/map');
+    navigate('/volunteer/missions');
   };
 
   const handleAccept = async () => {
@@ -250,11 +273,17 @@ export const VolunteerHome: React.FC = () => {
                         </div>
                         
                         <div className="flex flex-wrap gap-2">
+                          {inc.category === 'natural_calamity' || (inc.hazards && inc.hazards.includes('flood')) ? (
+                            <span className="text-[10px] uppercase bg-earth-accent/20 text-earth-accent px-2 py-0.5 rounded-sm border border-earth-accent/30 font-bold">Natural Calamity</span>
+                          ) : null}
+                          <span className="text-[10px] uppercase bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-sm border border-secondary/20 font-bold flex items-center gap-1">
+                            <span className="material-symbols-outlined text-[12px]">group</span> {inc.people_affected || 1} Person(s) in Need
+                          </span>
                           {inc.hazards?.map((h: string, i: number) => (
                             <span key={i} className="text-[10px] uppercase bg-error/10 text-error px-2 py-0.5 rounded-sm border border-error/20">{h}</span>
                           ))}
                           {inc.vulnerabilities?.map((v: string, i: number) => (
-                            <span key={i} className="text-[10px] uppercase bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-sm border border-secondary/20">{v}</span>
+                            <span key={i} className="text-[10px] uppercase bg-primary-container text-on-primary-container px-2 py-0.5 rounded-sm border border-primary/20">{v}</span>
                           ))}
                         </div>
                         

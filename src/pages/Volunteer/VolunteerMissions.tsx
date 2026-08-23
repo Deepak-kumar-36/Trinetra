@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 type MissionStatus = 'dispatched' | 'en_route' | 'on_scene' | 'resolved';
@@ -6,6 +6,16 @@ type MissionStatus = 'dispatched' | 'en_route' | 'on_scene' | 'resolved';
 export const VolunteerMissions: React.FC = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<MissionStatus>('dispatched');
+  const [missionData, setMissionData] = useState<any>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('volunteer_active_mission');
+    if (stored) {
+      try {
+        setMissionData(JSON.parse(stored));
+      } catch (e) {}
+    }
+  }, []);
 
   const advanceStatus = () => {
     if (status === 'dispatched') setStatus('en_route');
@@ -22,6 +32,28 @@ export const VolunteerMissions: React.FC = () => {
 
   const current = statusMap[status];
 
+  // If no mission is active
+  if (!missionData) {
+    return (
+      <div className="font-body-md antialiased min-h-screen flex flex-col items-center justify-center p-margin-mobile gap-6 text-center">
+        <span className="material-symbols-outlined text-[64px] text-on-surface-variant/30">assignment</span>
+        <h2 className="font-headline-md text-on-surface">No Active Mission</h2>
+        <p className="text-on-surface-variant max-w-sm">You haven't been assigned to an active incident yet. Check the Home Feed to self-assign.</p>
+        <button onClick={() => navigate('/volunteer')} className="mt-4 px-6 py-3 bg-primary text-white rounded-xl font-bold shadow-md">Go to Feed</button>
+      </div>
+    );
+  }
+
+  const renderTranscriptText = () => {
+    if (!missionData.raw_transcript) return missionData.description || 'Emergency reported';
+    try {
+      const parsed = JSON.parse(missionData.raw_transcript);
+      if (parsed.type === 'photo_report') return "Citizen submitted photo evidence.";
+      if (parsed.detail) return parsed.detail;
+    } catch(e) {}
+    return missionData.raw_transcript;
+  };
+
   return (
     <div className="font-body-md antialiased min-h-screen flex flex-col p-margin-mobile pt-6 gap-6 relative pb-32">
       <div className="flex justify-between items-center">
@@ -34,10 +66,10 @@ export const VolunteerMissions: React.FC = () => {
       {/* Current Mission Details */}
       <div className="bg-surface-container-lowest border-2 border-primary/20 rounded-2xl p-6 shadow-sm">
         <h3 className="font-headline-sm text-primary mb-2 flex items-center gap-2">
-          <span className="material-symbols-outlined">emergency</span> Flood Rescue: Rahul Gupta
+          <span className="material-symbols-outlined">emergency</span> {missionData.category ? missionData.category.replace('_', ' ').toUpperCase() : 'EMERGENCY RESPONSE'}
         </h3>
         <p className="text-on-surface-variant mb-4 font-medium italic border-l-4 border-earth-accent pl-3">
-          "Water entering ground floor. 3 people trapped including a child."
+          "{renderTranscriptText()}"
         </p>
         
         <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
