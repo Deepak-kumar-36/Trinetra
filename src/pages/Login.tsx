@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '../lib/firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
 
 const DEMO_ACCOUNTS = [
-  { email: 'deepak@trinetra.org', password: 'password', role: 'coordinator', displayName: 'Deepak Kumar' },
-  { email: 'vishesh@trinetra.org', password: 'password', role: 'volunteer', displayName: 'Vishesh Bharti' },
-  { email: 'adarsh@trinetra.org', password: 'password', role: 'volunteer', displayName: 'Adarsh Kumar' },
-  { email: 'moulik@trinetra.org', password: 'password', role: 'citizen', displayName: 'Moulik Tiwari' }
+  { email: 'coordinator@trinetra.org', role: 'coordinator', displayName: 'Deepak Kumar' },
+  { email: 'volunteer@trinetra.org', role: 'volunteer', displayName: 'Vishesh Bharti' },
+  { email: 'citizen@trinetra.org', role: 'citizen', displayName: 'Moulik Tiwari' },
+  { email: 'test@trinetra.org', role: 'test', displayName: 'Test User' }
 ];
 
 export const Login: React.FC = () => {
@@ -17,7 +15,7 @@ export const Login: React.FC = () => {
   const [searchParams] = useSearchParams();
   const roleFromParams = searchParams.get('role');
   
-  const { user } = useAuth();
+  const { user, loading, signInAs } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,89 +24,41 @@ export const Login: React.FC = () => {
   
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [seeding, setSeeding] = useState(false);
 
   // Auto redirect if already logged in
-  React.useEffect(() => {
-    if (user) {
+  useEffect(() => {
+    if (user && !loading) {
       const savedRole = roleFromParams || localStorage.getItem('trinetra_role') || 'citizen';
       if (roleFromParams) {
         localStorage.setItem('trinetra_role', savedRole);
       }
-      navigate(`/${savedRole}`);
+      
+      const userEmail = user.email || '';
+      if (userEmail.startsWith('citizen')) navigate('/citizen');
+      else if (userEmail.startsWith('volunteer')) navigate('/volunteer');
+      else if (userEmail.startsWith('coordinator')) navigate('/coordinator');
+      else navigate(`/${savedRole}`);
     }
-  }, [user, navigate, roleFromParams]);
+  }, [user, loading, navigate, roleFromParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Please fill in all required fields.");
+    if (!email) {
+      setError("Please fill in email field.");
       return;
     }
     
     setError(null);
-    setLoading(true);
-
-    try {
-      if (isLogin) {
-        // Attempt to login using Firebase
-        await signInWithEmailAndPassword(auth, email, password);
-      } else {
-        // Attempt to Sign Up using Firebase
-        if (!name) {
-          setError("Name is required for sign up.");
-          setLoading(false);
-          return;
-        }
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: name });
-      }
-
-      // Default to citizen if no role selected
-      const finalRole = roleFromParams || 'citizen';
-      localStorage.setItem('trinetra_role', finalRole);
-      
-      // Auto-redirect handles the rest
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || "Failed to authenticate.");
-      setLoading(false);
-    }
+    signInAs(email);
   };
 
   const fillDemoAccount = (acc: typeof DEMO_ACCOUNTS[0]) => {
     setEmail(acc.email);
-    setPassword(acc.password);
+    setPassword('password'); // mock password
     setIsLogin(true);
   };
 
-  const seedAccountsToFirebase = async () => {
-    setSeeding(true);
-    setError(null);
-    let successCount = 0;
-    
-    for (const acc of DEMO_ACCOUNTS) {
-      try {
-        const cred = await createUserWithEmailAndPassword(auth, acc.email, acc.password);
-        await updateProfile(cred.user, { displayName: acc.displayName });
-        successCount++;
-        // Sign out immediately so we can create the next one
-        await auth.signOut();
-      } catch (err: any) {
-        if (err.code === 'auth/email-already-in-use') {
-          console.log(`${acc.email} already exists.`);
-        } else {
-          console.error(err);
-        }
-      }
-    }
-    
-    setSeeding(false);
-    alert(`Seeding complete. ${successCount} new accounts created.`);
-  };
-
-  if (loading || seeding) return <LoadingScreen message={seeding ? "Registering Demo Accounts..." : "Authenticating..."} />;
+  if (loading) return <LoadingScreen message="Authenticating..." />;
 
   return (
     <div className="min-h-screen bg-stone-bg flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -187,20 +137,6 @@ export const Login: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-on-surface-variant mb-1 ml-1">Phone Number (Optional)</label>
-            <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant/50">call</span>
-              <input 
-                type="tel" 
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+91 98765 43210"
-                className="w-full bg-surface-container-lowest border border-outline-variant/50 rounded-2xl pl-12 pr-4 py-3.5 outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-on-surface"
-              />
-            </div>
-          </div>
-
           <button 
             type="submit" 
             className="w-full bg-primary hover:bg-primary/90 text-on-primary py-4 rounded-2xl font-bold tracking-wide transition-all active:scale-[0.98] shadow-md shadow-primary/20 mt-2"
@@ -223,12 +159,12 @@ export const Login: React.FC = () => {
         </div>
 
         <div className="mt-8 text-center border-t border-outline-variant/30 pt-6">
-          <p className="text-xs text-on-surface-variant mb-3 font-bold uppercase tracking-widest">Quick Login</p>
+          <p className="text-xs text-on-surface-variant mb-3 font-bold uppercase tracking-widest">Quick Login (Mock)</p>
           <div className="flex flex-wrap justify-center gap-2">
             {DEMO_ACCOUNTS.map(acc => (
               <button 
                 key={acc.email}
-                onClick={() => fillDemoAccount(acc)}
+                onClick={() => { fillDemoAccount(acc); signInAs(acc.email); }}
                 className="text-[10px] bg-surface-variant hover:bg-surface-variant/80 px-3 py-1.5 rounded-lg text-on-surface-variant transition-colors border border-outline-variant/50"
                 title={`${acc.displayName} (${acc.role})`}
               >
@@ -236,14 +172,6 @@ export const Login: React.FC = () => {
               </button>
             ))}
           </div>
-          
-          {/* Seed Button for setup */}
-          <button 
-            onClick={seedAccountsToFirebase}
-            className="mt-6 text-[10px] uppercase font-bold tracking-wider text-primary border border-primary/30 px-4 py-2 rounded-full hover:bg-primary-container transition-colors"
-          >
-            Seed Demo Accounts to Firebase
-          </button>
         </div>
       </div>
     </div>
