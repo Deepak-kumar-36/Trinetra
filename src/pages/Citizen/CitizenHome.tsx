@@ -569,13 +569,12 @@ export const CitizenHome: React.FC = () => {
         onClose={() => setIsTriageOpen(false)} 
         onComplete={handleTriageComplete} 
       />
-
       {/* Dispatch Alert Modal (Coordinator Response) */}
       {dispatchAlert && (
         <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
           <div className="bg-surface border-t-8 border-t-primary rounded-3xl p-8 max-w-md w-full shadow-2xl animate-slide-in-up text-center">
             <div className="w-20 h-20 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
-               <span className="material-symbols-outlined text-[40px]">emergency_share</span>
+              <span className="material-symbols-outlined text-[40px]">emergency_share</span>
             </div>
             <h2 className="font-display-lg text-3xl font-bold text-on-surface mb-4">Help is on the way!</h2>
             <p className="text-lg text-on-surface-variant leading-relaxed mb-8">
