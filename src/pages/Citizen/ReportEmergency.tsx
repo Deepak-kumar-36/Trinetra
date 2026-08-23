@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { calculateUrgencyScore } from '../../lib/dispatchEngine';
 import { useTTS } from '../../contexts/TTSContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { generateUUID } from '../../lib/utils';
 
 export const ReportEmergency: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +15,7 @@ export const ReportEmergency: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const { speak } = useTTS();
+  const { user } = useAuth();
 
   const handleSubmit = async () => {
     if (!description.trim()) {
@@ -24,8 +27,6 @@ export const ReportEmergency: React.FC = () => {
     setErrorMsg('');
     
     try {
-      // Get authenticated user
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('You must be logged in to submit a report.');
       }
@@ -60,9 +61,22 @@ export const ReportEmergency: React.FC = () => {
         severity: severity as any,
       });
 
+      // 2.8 Get GPS Location
+      let locationPoint = `POINT(77.2090 28.6139)`; // Default fallback (Delhi)
+      if ('geolocation' in navigator) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+          });
+          locationPoint = `POINT(${position.coords.longitude} ${position.coords.latitude})`;
+        } catch (e) {
+          console.warn("Could not get GPS location for report", e);
+        }
+      }
+
       // 3. Save to Supabase
       const { error: insertError } = await supabase.from('incidents').insert([{
-        reporter_id: user.id, // Fixed: Send the actual authenticated user UUID
+        reporter_id: generateUUID(user.uid), // Fixed: Use valid UUID format for reporter_id
         status: 'reported', // Fixed: Use valid enum value 'reported' instead of 'Received'
         category: 'general',
         people_affected: finalPeopleCount,
@@ -73,7 +87,7 @@ export const ReportEmergency: React.FC = () => {
         urgency_score: score,
         urgency_band: score >= 80 ? 'critical' : score >= 50 ? 'high' : score >= 20 ? 'medium' : 'low',
         urgency_breakdown: reasoning,
-        location: `POINT(77.2090 28.6139)` // Insert PostGIS point format
+        location: locationPoint // Actual GPS or fallback
       }]);
       
       if (insertError) {

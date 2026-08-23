@@ -48,30 +48,7 @@ export function useVoiceDistress(isActive: boolean) {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
 
-  const startCountdown = useCallback(() => {
-    if (countdown !== null) return; // Already counting down
-    
-    setCountdown(7);
-    timerRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev === null || prev <= 1) {
-          clearInterval(timerRef.current!);
-          timerRef.current = null;
-          triggerSOS();
-          return null;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, [countdown, user]); // Include user dependency
 
-  const cancelCountdown = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    setCountdown(null);
-  }, []);
 
   const triggerSOS = useCallback(() => {
     if (!user) return;
@@ -130,6 +107,40 @@ export function useVoiceDistress(isActive: boolean) {
     }
   }, [user]);
 
+  const startCountdown = useCallback(() => {
+    if (timerRef.current) return; // Already counting down
+    
+    setCountdown(7);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          clearInterval(timerRef.current!);
+          timerRef.current = null;
+          triggerSOS();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [triggerSOS]);
+
+  const cancelCountdown = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setCountdown(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
+
   useEffect(() => {
     if (!isActive) {
       if (recognitionRef.current) {
@@ -154,7 +165,7 @@ export function useVoiceDistress(isActive: boolean) {
 
     recognition.onresult = (event) => {
       // If we are already counting down, don't restart it
-      if (countdown !== null) return;
+      if (timerRef.current) return;
       
       const lastResult = event.results[event.results.length - 1];
       const transcript = lastResult[0].transcript.toLowerCase().trim();
@@ -174,7 +185,7 @@ export function useVoiceDistress(isActive: boolean) {
 
     recognition.onend = () => {
       // Auto-restart if it was stopped by the system but isActive is still true
-      if (isActive && countdown === null) {
+      if (isActive && !timerRef.current) {
         try {
           recognition.start();
         } catch (e) {
@@ -194,9 +205,8 @@ export function useVoiceDistress(isActive: boolean) {
 
     return () => {
       recognition.stop();
-      if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isActive, countdown, startCountdown]);
+  }, [isActive, startCountdown]);
 
   return {
     isListening,

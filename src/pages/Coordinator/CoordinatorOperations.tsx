@@ -139,6 +139,17 @@ export const CoordinatorOperations: React.FC = () => {
       return;
     }
     
+    // Create notification for the citizen
+    if (selectedIncident.reporter_id) {
+      await supabase.from('notifications').insert([{
+        user_id: selectedIncident.reporter_id,
+        type: 'resource_dispatched',
+        priority: 'high',
+        related_incident_id: selectedIncident.id,
+        message: `The Coordinator has dispatched a Volunteer Team to your location. Stay calm, help is on the way!`,
+      }]);
+    }
+    
     // Update incident status
     await supabase.from('incidents').update({ status: 'assigned' }).eq('id', selectedIncident.id);
     
