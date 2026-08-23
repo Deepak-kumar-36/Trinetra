@@ -200,18 +200,22 @@ const CitizenLayoutInner: React.FC = () => {
                 </div>
               </div>
 
-              <Link to="/citizen/settings" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
-                <span className="material-symbols-outlined text-sage-primary text-[24px]">settings</span>
-                <span className="font-label-lg">Settings</span>
-              </Link>
-              <Link to="/citizen/contacts" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
-                <span className="material-symbols-outlined text-sage-primary text-[24px]">contacts</span>
-                <span className="font-label-lg">Emergency Contacts</span>
-              </Link>
-              <Link to="/citizen/history" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
+              <NavLink to="/citizen" end onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">home</span>
+                <span className="font-label-lg">Home</span>
+              </NavLink>
+              <NavLink to="/citizen/requests" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
                 <span className="material-symbols-outlined text-sage-primary text-[24px]">history</span>
-                <span className="font-label-lg">Incident History</span>
-              </Link>
+                <span className="font-label-lg">My Requests</span>
+              </NavLink>
+              <NavLink to="/citizen/nearby" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">explore_nearby</span>
+                <span className="font-label-lg">Nearby Shelters</span>
+              </NavLink>
+              <NavLink to="/citizen/profile" onClick={() => setIsMenuOpen(false)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-surface-container-high transition-colors text-on-surface active:scale-95 no-underline">
+                <span className="material-symbols-outlined text-sage-primary text-[24px]">person</span>
+                <span className="font-label-lg">Profile & Settings</span>
+              </NavLink>
               
               <div className="my-4 border-t border-outline-variant/30"></div>
               

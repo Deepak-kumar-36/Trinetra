@@ -304,6 +304,18 @@ export const CitizenHome: React.FC = () => {
       setIsTriageOpen(true);
       return;
     }
+    if (feature === 'Medical Profile') {
+      navigate('/citizen/profile');
+      return;
+    }
+    if (feature === 'Nearby Shelters') {
+      navigate('/citizen/nearby');
+      return;
+    }
+    if (feature === 'My Requests') {
+      navigate('/citizen/requests');
+      return;
+    }
     setActiveNotification({
       title: 'Module Access',
       message: `Opening ${feature}...`
