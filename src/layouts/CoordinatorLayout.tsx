@@ -11,52 +11,85 @@ export const CoordinatorLayout: React.FC = () => {
   const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
   const { isTTSEnabled, toggleTTS, speak } = useTTS();
 
-  // Real-time Voice SOS Alert Listener for Command Center
-  const [voiceAlert, setVoiceAlert] = useState<any>(null);
+  // Real-time Emergency Help Alert Listener for Command Center
+  const [emergencyAlert, setEmergencyAlert] = useState<any>(null);
   const lastSeenIdRef = useRef<number>(0);
+  const isInitializedRef = useRef<boolean>(false);
 
   useEffect(() => {
-    const checkForVoiceSOS = () => {
+    // Initialize last seen ID with whatever is currently in storage so old incidents don't immediately pop up
+    const initializeLastSeen = () => {
+      try {
+        const stored = localStorage.getItem('trinetra_live_incidents');
+        if (stored) {
+          const incidents = JSON.parse(stored);
+          if (incidents.length > 0) {
+            const maxId = Math.max(...incidents.map((i: any) => typeof i.id === 'number' ? i.id : 0));
+            lastSeenIdRef.current = maxId;
+          }
+        }
+      } catch(e) {}
+      isInitializedRef.current = true;
+    };
+
+    initializeLastSeen();
+
+    const checkForNewEmergencies = () => {
       const stored = localStorage.getItem('trinetra_live_incidents');
       if (stored) {
         try {
           const incidents = JSON.parse(stored);
-          const voiceIncidents = incidents.filter(
-            (inc: any) => inc.trigger_source === 'voice_keyword_auto' && inc.id > lastSeenIdRef.current
+          // Find any new incident created after lastSeenIdRef
+          const newIncidents = incidents.filter(
+            (inc: any) => (typeof inc.id === 'number' ? inc.id : Date.now()) > lastSeenIdRef.current
           );
-          if (voiceIncidents.length > 0) {
-            const latest = voiceIncidents[voiceIncidents.length - 1];
-            lastSeenIdRef.current = latest.id;
-            triggerVoiceAlert(latest);
+          if (newIncidents.length > 0) {
+            const latest = newIncidents[newIncidents.length - 1];
+            if (typeof latest.id === 'number') {
+              lastSeenIdRef.current = latest.id;
+            }
+            triggerEmergencyAlert(latest);
           }
         } catch(e) {}
       }
     };
 
-    // 1. Supabase Realtime Subscription (Cross-device for pitch)
-    const channel = supabase.channel('sos-alerts');
-    channel.on('broadcast', { event: 'new-voice-sos' }, (payload) => {
-      console.log('Received Supabase Voice SOS (Coordinator):', payload.payload);
-      const incident = payload.payload;
-      if (incident.id > lastSeenIdRef.current) {
-        lastSeenIdRef.current = incident.id;
-        triggerVoiceAlert(incident);
-      }
-    }).subscribe();
+    // 1. Supabase Realtime Subscription for database inserts
+    const channel = supabase
+      .channel('coordinator-emergency-alerts')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'incidents' },
+        (payload) => {
+          console.log('Incoming Supabase Incident (Coordinator):', payload.new);
+          if (isInitializedRef.current) {
+            triggerEmergencyAlert(payload.new);
+          }
+        }
+      )
+      .on('broadcast', { event: 'new-voice-sos' }, (payload) => {
+        console.log('Received Supabase Voice SOS (Coordinator):', payload.payload);
+        const incident = payload.payload;
+        if (incident.id > lastSeenIdRef.current) {
+          lastSeenIdRef.current = incident.id;
+          triggerEmergencyAlert(incident);
+        }
+      })
+      .subscribe();
 
-    // 2. LocalStorage Polling (Local fallback)
-    const interval = setInterval(checkForVoiceSOS, 2000);
-    window.addEventListener('storage', checkForVoiceSOS);
+    // 2. LocalStorage Polling (Local fallback for instant response)
+    const interval = setInterval(checkForNewEmergencies, 1500);
+    window.addEventListener('storage', checkForNewEmergencies);
     
     return () => { 
       clearInterval(interval); 
-      window.removeEventListener('storage', checkForVoiceSOS); 
+      window.removeEventListener('storage', checkForNewEmergencies); 
       supabase.removeChannel(channel);
     };
   }, []);
 
-  const triggerVoiceAlert = (incident: any) => {
-    setVoiceAlert(incident);
+  const triggerEmergencyAlert = (incident: any) => {
+    setEmergencyAlert(incident);
     if ('vibrate' in navigator) navigator.vibrate([400, 200, 400, 200, 800]);
     try {
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -66,7 +99,7 @@ export const CoordinatorLayout: React.FC = () => {
       osc.type = 'square'; 
       osc.frequency.setValueAtTime(880, audioCtx.currentTime);
       osc.frequency.setValueAtTime(1108.73, audioCtx.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
       osc.start(); setTimeout(() => osc.stop(), 1000);
     } catch(e) {}
 
@@ -74,11 +107,15 @@ export const CoordinatorLayout: React.FC = () => {
     try {
       parsedTranscript = JSON.parse(incident.raw_transcript || '{}');
     } catch (e) {}
-    const isPhotoReport = parsedTranscript.type === 'photo_report';
+    const isPhotoReport = parsedTranscript.type === 'photo_report' || incident.category === 'photo_report';
+    const isVoiceDistress = incident.category === 'voice_distress' || incident.trigger_source === 'voice_keyword_auto';
+    
     if (isPhotoReport) {
-      speak("Incoming Photo SOS. A citizen has uploaded photo evidence of an emergency.");
+      speak("Incoming Emergency Alert. A citizen has submitted a photo report requiring assistance.");
+    } else if (isVoiceDistress) {
+      speak("Incoming Voice SOS. Passive distress detected from citizen.");
     } else {
-      speak("Incoming Voice SOS. A citizen's voice detection has triggered an emergency alert.");
+      speak("Emergency request received. A citizen has requested urgent assistance.");
     }
   };
 
@@ -283,89 +320,107 @@ export const CoordinatorLayout: React.FC = () => {
           </div>
         </div>
       )}
-      {/* Voice SOS Command Center Alert */}
-      {voiceAlert && (() => {
+      {/* Real-Time Emergency Command Center Alert Modal */}
+      {emergencyAlert && (() => {
         let parsedTranscript: any = {};
         try {
-          parsedTranscript = JSON.parse(voiceAlert.raw_transcript || '{}');
+          parsedTranscript = JSON.parse(emergencyAlert.raw_transcript || '{}');
         } catch (e) {}
         
-        const isPhotoReport = parsedTranscript.type === 'photo_report';
-        const triggerDetail = parsedTranscript.url || parsedTranscript.detail || '';
+        const isPhotoReport = parsedTranscript.type === 'photo_report' || emergencyAlert.category === 'photo_report';
+        const isVoiceDistress = emergencyAlert.category === 'voice_distress' || emergencyAlert.trigger_source === 'voice_keyword_auto';
+        const isTriage = parsedTranscript.type === 'triage_report';
+        const photoUrl = parsedTranscript.url || (typeof emergencyAlert.raw_transcript === 'string' && emergencyAlert.raw_transcript.startsWith('http') ? emergencyAlert.raw_transcript : null);
+
+        let headline = 'Emergency Request Received';
+        let detailText = emergencyAlert.raw_transcript || emergencyAlert.description || 'Citizen has called for immediate assistance.';
+        if (isPhotoReport) {
+          headline = 'Photo SOS Evidence Uploaded';
+          detailText = 'A citizen has submitted visual photo evidence of an emergency from the field.';
+        } else if (isVoiceDistress) {
+          headline = 'Passive Voice Distress Detected';
+          detailText = "Citizen's device detected a distress keyword or shout. Immediate assistance requested.";
+        } else if (isTriage) {
+          headline = `Triage Emergency: ${parsedTranscript.detail?.incidentType || 'Urgent'}`;
+          detailText = parsedTranscript.detail?.description || 'Structured triage assessment submitted by citizen.';
+        }
 
         return (
           <div className="fixed inset-0 z-[9999] bg-black/85 flex flex-col items-center justify-center p-6 animate-fade-in backdrop-blur-md">
             <div className="w-full max-w-lg bg-surface-container-lowest rounded-[2rem] p-8 shadow-2xl flex flex-col items-center text-center border-2 border-error">
-            <div className="w-24 h-24 rounded-full bg-error flex items-center justify-center mb-6 animate-[pulse_1s_ease-in-out_infinite] shadow-[0_0_40px_rgba(200,50,50,0.5)]">
-              <span className="material-symbols-outlined text-[56px] text-white">warning</span>
-            </div>
+              <div className="w-20 h-20 rounded-full bg-error flex items-center justify-center mb-5 animate-[pulse_1s_ease-in-out_infinite] shadow-[0_0_40px_rgba(200,50,50,0.5)]">
+                <span className="material-symbols-outlined text-[48px] text-white">emergency</span>
+              </div>
             
-              <div className="bg-error text-white px-4 py-1.5 rounded-full font-label-sm uppercase tracking-widest mb-4 flex items-center gap-2">
+              <div className="bg-error text-white px-4 py-1 rounded-full font-label-sm uppercase tracking-widest mb-3 flex items-center gap-2">
                 <span className="inline-block w-2 h-2 bg-white rounded-full animate-[pulse_0.5s_ease-in-out_infinite]"></span>
-                {isPhotoReport ? 'Priority Alert — Photo Evidence' : 'Priority Alert — Voice Auto-Detection'}
+                Priority Alert — Live Citizen Request
               </div>
               
               <h2 className="font-display-lg text-on-surface mb-2 text-2xl font-bold">
-                {isPhotoReport ? 'Photo SOS Received' : 'Passive Distress Detected'}
+                {headline}
               </h2>
-              <p className="font-body-lg text-on-surface-variant mb-6">
-                {isPhotoReport
-                  ? "A citizen has uploaded photo evidence of an emergency from their location."
-                  : triggerDetail === 'shout_detected'
-                    ? "A citizen's device detected a sustained loud noise (shout). No manual confirmation was received — treat as potential emergency."
-                    : "A citizen's device detected a distress keyword. No manual confirmation was received — treat as potential emergency."}
+              <p className="font-body-lg text-on-surface-variant mb-5 text-sm">
+                {detailText}
               </p>
             
-            <div className="bg-surface-container rounded-xl p-5 w-full mb-6 border border-surface-variant">
-              <div className="grid grid-cols-2 gap-4 text-left">
-                  {isPhotoReport ? (
+              <div className="bg-surface-container rounded-xl p-5 w-full mb-6 border border-surface-variant">
+                <div className="grid grid-cols-2 gap-4 text-left">
+                  {photoUrl && (
                     <div className="col-span-2 mb-2">
                       <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-2 font-bold">Photo Evidence</p>
-                      <div className="w-full h-48 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-outline-variant">
-                        {triggerDetail && (triggerDetail.startsWith('http') || triggerDetail.startsWith('data:')) ? (
-                          <img src={triggerDetail} alt="SOS Evidence" className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="material-symbols-outlined text-surface-variant text-[48px]">broken_image</span>
-                        )}
+                      <div className="w-full h-44 bg-black rounded-lg overflow-hidden flex items-center justify-center border border-outline-variant">
+                        <img src={photoUrl} alt="Emergency Evidence" className="w-full h-full object-cover" />
                       </div>
                     </div>
-                  ) : (
-                    <div>
-                      <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">
-                        {triggerDetail === 'shout_detected' ? 'Detection (Shout)' : 'Detection (Keyword)'}
-                      </p>
-                      <p className="font-headline-lg-mobile text-error">
-                        {triggerDetail === 'shout_detected' ? 'Sustained Loud Noise' : triggerDetail || voiceAlert.title || voiceAlert.description}
-                      </p>
-                    </div>
                   )}
-                <div>
-                  <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Coordinates</p>
-                  <p className="font-body-md text-on-surface font-mono">{voiceAlert.pos ? `${voiceAlert.pos[0].toFixed(4)}, ${voiceAlert.pos[1].toFixed(4)}` : 'N/A'}</p>
-                </div>
-                <div>
-                  <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Severity</p>
-                  <p className="font-body-md text-error font-bold flex items-center gap-1"><span className="material-symbols-outlined text-[16px]">priority_high</span>{voiceAlert.urgency_band || voiceAlert.severity || 'Critical'}</p>
-                </div>
                   <div>
-                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Source</p>
-                    <p className="font-body-md text-amber-600 font-bold flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[16px]">
-                        {isPhotoReport ? 'photo_camera' : 'memory'}
-                      </span>
-                      {isPhotoReport ? 'Citizen App' : 'Unconfirmed Auto'}
+                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Category</p>
+                    <p className="font-body-md text-primary font-bold uppercase text-xs">
+                      {emergencyAlert.category ? emergencyAlert.category.replace('_', ' ') : 'General'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Urgency Score</p>
+                    <p className="font-body-md text-error font-bold flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[16px]">priority_high</span>
+                      {emergencyAlert.urgency_score || emergencyAlert.urgency_band || 100}/100
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">Location</p>
+                    <p className="font-body-md text-on-surface text-xs font-mono">
+                      {emergencyAlert.pos ? `${emergencyAlert.pos[0].toFixed(4)}, ${emergencyAlert.pos[1].toFixed(4)}` : 'Lat 28.6139, Lng 77.2090'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-bold">People in Need</p>
+                    <p className="font-body-md text-amber-600 font-bold text-xs flex items-center gap-1">
+                      <span className="material-symbols-outlined text-[16px]">group</span>
+                      {emergencyAlert.people_affected || 1} Person(s)
                     </p>
                   </div>
                 </div>
               </div>
               
-              <button 
-                onClick={() => setVoiceAlert(null)}
-                className="w-full h-14 bg-error text-white rounded-xl font-bold uppercase tracking-wider hover:bg-error/90 transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95"
-              >
-                <span className="material-symbols-outlined">verified</span>
-                Acknowledge & Deploy Response
-              </button>
+              <div className="flex gap-3 w-full">
+                <button 
+                  onClick={() => {
+                    setEmergencyAlert(null);
+                    navigate('/coordinator');
+                  }}
+                  className="flex-1 h-14 bg-error text-white rounded-xl font-bold uppercase tracking-wider hover:bg-error/90 transition-colors shadow-md flex items-center justify-center gap-2 active:scale-95 text-sm"
+                >
+                  <span className="material-symbols-outlined">send</span>
+                  Open & Dispatch
+                </button>
+                <button 
+                  onClick={() => setEmergencyAlert(null)}
+                  className="h-14 px-6 bg-surface-variant text-on-surface rounded-xl font-bold uppercase tracking-wider hover:bg-surface-variant/80 transition-colors active:scale-95 text-sm"
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
           </div>
         );

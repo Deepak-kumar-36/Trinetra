@@ -95,6 +95,25 @@ export const ReportEmergency: React.FC = () => {
         throw new Error('Failed to save to database. ' + insertError.message);
       }
 
+      // Also write to localStorage for instant cross-tab sync
+      try {
+        const newIncident = {
+          id: Date.now(),
+          pos: [28.6139, 77.2090],
+          title: `Emergency: ${description.slice(0, 30)}...`,
+          severity: score >= 80 ? 'Critical' : score >= 50 ? 'High' : 'Medium',
+          urgency_band: score,
+          category: 'emergency_report',
+          trigger_source: 'manual_report',
+          raw_transcript: description,
+          people_affected: finalPeopleCount,
+          hazards: finalAiData.hazards || []
+        };
+        const existing = JSON.parse(localStorage.getItem('trinetra_live_incidents') || '[]');
+        localStorage.setItem('trinetra_live_incidents', JSON.stringify([...existing, newIncident]));
+        window.dispatchEvent(new Event('storage'));
+      } catch(e) {}
+
       // 4. Redirect to tracking view
       speak("Emergency report submitted successfully. Help is on the way.");
       navigate('/citizen');
