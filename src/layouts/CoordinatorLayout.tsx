@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { Outlet, NavLink, useLocation, Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { useTTS } from '../contexts/TTSContext';
 
 export const CoordinatorLayout: React.FC = () => {
+  const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -293,7 +294,7 @@ export const CoordinatorLayout: React.FC = () => {
                     setIsMenuOpen(false);
                     navigate('/login?role=coordinator');
                   }} 
-                  className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95"
+                  className="w-full flex items-center gap-4 p-4 rounded-xl hover:bg-error-container/80 text-error transition-colors active:scale-95 no-underline"
                 >
                   <span className="material-symbols-outlined text-[24px]">logout</span>
                   <span className="font-label-lg font-bold">Terminate Session</span>

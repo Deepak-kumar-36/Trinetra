@@ -14,6 +14,7 @@ const CitizenLayoutInner: React.FC = () => {
   
   const { enabled, setEnabled } = useDistressDetection();
   const { isTTSEnabled, toggleTTS } = useTTS();
+  const { signOut } = useAuth();
 
   const isReport = location.pathname.includes('/report');
 
