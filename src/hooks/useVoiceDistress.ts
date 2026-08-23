@@ -167,7 +167,11 @@ export function useVoiceDistress(isActive: boolean) {
       // If we are already counting down, don't restart it
       if (timerRef.current) return;
       
+      if (!event.results || event.results.length === 0) return;
+      
       const lastResult = event.results[event.results.length - 1];
+      if (!lastResult || !lastResult[0]) return;
+      
       const transcript = lastResult[0].transcript.toLowerCase().trim();
       
       // Check if any keyword matches
