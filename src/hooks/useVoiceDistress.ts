@@ -39,6 +39,10 @@ const DISTRESS_KEYWORDS = [
   'call the police', 'please help', 'someone help'
 ];
 
+// Max consecutive restarts before we give up (prevents infinite crash loops on Android)
+const MAX_RESTARTS = 5;
+const RESTART_DELAY_MS = 1500; // Delay before restarting recognition to avoid overwhelming Android AudioRecord
+
 export function useVoiceDistress(isActive: boolean) {
   const { user } = useAuth();
   const [isListening, setIsListening] = useState(false);
@@ -47,8 +51,15 @@ export function useVoiceDistress(isActive: boolean) {
   // Timer ref to manage the countdown interval
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const isRestartingRef = useRef(false);
+  const restartCountRef = useRef(0);
+  const restartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isActiveRef = useRef(isActive);
 
-
+  // Keep a ref in sync with the prop so callbacks always see the latest value
+  useEffect(() => {
+    isActiveRef.current = isActive;
+  }, [isActive]);
 
   const triggerSOS = useCallback(() => {
     if (!user) return;
@@ -78,6 +89,21 @@ export function useVoiceDistress(isActive: boolean) {
             urgency_breakdown: [{ reason: 'Triggered via Passive Voice Distress (+100)' }],
             location: `POINT(${lon} ${lat})`
           }]);
+
+          // Also write to localStorage for instant cross-tab sync
+          const newIncident = {
+            id: Date.now(),
+            pos: [lat, lon],
+            title: 'Voice SOS',
+            severity: 'Critical',
+            urgency_band: 100,
+            category: 'voice_distress',
+            trigger_source: 'voice_keyword_auto',
+            raw_transcript: JSON.stringify({ detail: 'voice_keyword', type: 'voice_distress' })
+          };
+          const existing = JSON.parse(localStorage.getItem('trinetra_live_incidents') || '[]');
+          localStorage.setItem('trinetra_live_incidents', JSON.stringify([...existing, newIncident]));
+          window.dispatchEvent(new Event('storage'));
         },
         async (err) => {
           console.warn("GPS failed for voice distress", err);
@@ -143,10 +169,18 @@ export function useVoiceDistress(isActive: boolean) {
 
   useEffect(() => {
     if (!isActive) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-        setIsListening(false);
+      // Clean up everything when deactivated
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
       }
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch(e) { /* ignore */ }
+        recognitionRef.current = null;
+      }
+      isRestartingRef.current = false;
+      restartCountRef.current = 0;
+      setIsListening(false);
       return;
     }
 
@@ -162,8 +196,12 @@ export function useVoiceDistress(isActive: boolean) {
     recognition.lang = 'en-US';
     
     recognitionRef.current = recognition;
+    restartCountRef.current = 0;
 
     recognition.onresult = (event) => {
+      // Reset restart counter on successful result (proves mic is working)
+      restartCountRef.current = 0;
+
       // If we are already counting down, don't restart it
       if (timerRef.current) return;
       
@@ -184,20 +222,49 @@ export function useVoiceDistress(isActive: boolean) {
     };
 
     recognition.onerror = (event) => {
-      console.warn("Speech recognition error", event);
+      console.warn("Speech recognition error:", event.error || event);
+      
+      // Fatal errors that we should NOT try to restart from
+      const fatalErrors = ['not-allowed', 'service-not-allowed', 'language-not-supported'];
+      if (fatalErrors.includes(event.error)) {
+        console.error("Fatal speech recognition error. Stopping voice distress.");
+        setIsListening(false);
+        return;
+      }
+      // For non-fatal errors (network, audio-capture, aborted), let onend handle restart
     };
 
     recognition.onend = () => {
-      // Auto-restart if it was stopped by the system but isActive is still true
-      if (isActive && !timerRef.current) {
+      // Guard: don't restart if we are already in a restart cycle, if deactivated, or if countdown is running
+      if (!isActiveRef.current || timerRef.current || isRestartingRef.current) {
+        setIsListening(false);
+        return;
+      }
+
+      // Guard: don't restart if we've exceeded the max restart limit
+      if (restartCountRef.current >= MAX_RESTARTS) {
+        console.warn(`Voice distress: exceeded ${MAX_RESTARTS} restart attempts. Stopping.`);
+        setIsListening(false);
+        return;
+      }
+
+      // Debounced restart to avoid crash loops on Android
+      isRestartingRef.current = true;
+      setIsListening(false);
+
+      restartTimeoutRef.current = setTimeout(() => {
+        isRestartingRef.current = false;
+        if (!isActiveRef.current) return;
+
+        restartCountRef.current++;
         try {
           recognition.start();
+          setIsListening(true);
         } catch (e) {
-          // Ignore start errors
+          console.warn("Failed to restart speech recognition", e);
+          setIsListening(false);
         }
-      } else {
-        setIsListening(false);
-      }
+      }, RESTART_DELAY_MS);
     };
 
     try {
@@ -208,7 +275,11 @@ export function useVoiceDistress(isActive: boolean) {
     }
 
     return () => {
-      recognition.stop();
+      if (restartTimeoutRef.current) {
+        clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = null;
+      }
+      try { recognition.abort(); } catch(e) { /* ignore */ }
     };
   }, [isActive, startCountdown]);
 
