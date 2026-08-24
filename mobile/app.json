@@ -1,0 +1,70 @@
+{
+  "expo": {
+    "name": "TriNetra",
+    "slug": "trinetra",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.trinetra.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.trinetra.app",
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24
+          }
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow TriNetra to track your location for emergency dispatching."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow TriNetra to access photos for emergency reports.",
+          "cameraPermission": "Allow TriNetra to access camera for emergency reports."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow TriNetra to use your microphone for Voice SOS detection."
+        }
+      ],
+      "expo-quick-actions"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a96d7720-21b4-4b19-9b76-738a21a5c2b9"
+      }
+    }
+  }
+}
