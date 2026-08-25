@@ -7,9 +7,11 @@ import * as FileSystem from 'expo-file-system';
 import * as Location from 'expo-location';
 import { useVoiceDistress } from '../../core/hooks/useVoiceDistress';
 import { useAuth } from '../../core/contexts/AuthContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 export function CitizenHomeScreen({ navigation }: any) {
   const [silentSosEnabled, setSilentSosEnabled] = useState(true);
+  const [showConsentModal, setShowConsentModal] = useState(false);
   const [sosActive, setSosActive] = useState(false); // UI state for button press down
   const [isSosTriggered, setIsSosTriggered] = useState(false); // Has the 3s hold completed?
   const [manualCountdown, setManualCountdown] = useState<number | null>(null); // 5s cancel window
@@ -24,8 +26,8 @@ export function CitizenHomeScreen({ navigation }: any) {
   const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   
   // Timer Refs
-  const holdTimerRef = React.useRef<NodeJS.Timeout | null>(null);
-  const countdownIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const holdTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { isListening, countdown, cancelCountdown, isSupported } = useVoiceDistress(silentSosEnabled);
 
@@ -142,6 +144,11 @@ export function CitizenHomeScreen({ navigation }: any) {
     else if (feature === 'Triage Protocol') navigation.navigate('TriageProtocol');
     else if (feature === 'Medical Profile') navigation.navigate('MedicalProfile');
     else if (feature === 'Nearby Shelters') navigation.navigate('NearbyShelters');
+  };
+
+  const handleIncidentSelect = (type: string) => {
+    // Treat as manual emergency trigger
+    handleSosStart();
   };
 
   const submitVoiceReport = async () => {

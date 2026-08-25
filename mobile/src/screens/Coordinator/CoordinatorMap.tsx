@@ -107,7 +107,7 @@ export function CoordinatorMapScreen({ navigation }: any) {
 
         <MapView 
           provider={PROVIDER_GOOGLE}
-          style={StyleSheet.absoluteFillObject}
+          style={StyleSheet.absoluteFill}
           initialRegion={{
             latitude: centerPosition.latitude,
             longitude: centerPosition.longitude,

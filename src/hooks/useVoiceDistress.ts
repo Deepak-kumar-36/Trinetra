@@ -286,6 +286,7 @@ export function useVoiceDistress(isActive: boolean) {
   return {
     isListening,
     countdown,
-    cancelCountdown
+    cancelCountdown,
+    isSupported: !!(window.SpeechRecognition || window.webkitSpeechRecognition)
   };
 }

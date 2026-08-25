@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { supabase } from '../../core/lib/supabase';
 import { storage } from '../../core/lib/storage';
 import * as Location from 'expo-location';
+import { useAuth } from '../../core/contexts/AuthContext';
 
 export function VolunteerHomeScreen({ navigation }: any) {
   const [mission, setMission] = useState<any>(null);
@@ -13,11 +14,36 @@ export function VolunteerHomeScreen({ navigation }: any) {
   const [isAccepting, setIsAccepting] = useState(false);
   const [isSelfAssigning, setIsSelfAssigning] = useState(false);
   const [responderId, setResponderId] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchActiveIncidents();
     startLocationTracking();
-  }, []);
+
+    const incidentSub = supabase.channel('public:incidents')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'incidents', filter: 'status=eq.reported' }, fetchActiveIncidents)
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(incidentSub);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!responderId) return;
+    const missionSub = supabase.channel('public:missions')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'missions', filter: `responder_id=eq.${responderId}` }, async (payload) => {
+        const { data: missionData } = await supabase.from('missions').select('*, incidents(*)').eq('id', payload.new.id).single();
+        if (missionData) {
+          setMission(missionData);
+          setIncident(missionData.incidents);
+        }
+      })
+      .subscribe();
+    return () => {
+      supabase.removeChannel(missionSub);
+    };
+  }, [responderId]);
 
   const startLocationTracking = async () => {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -27,7 +53,16 @@ export function VolunteerHomeScreen({ navigation }: any) {
     }
 
     // Attempt to get device ID or responder ID
-    let rId = await storage.getItem('trinetra_device_id');
+    let rId = null;
+    if (user?.id) {
+      const { data } = await supabase.from('responders').select('id').eq('user_id', user.id).single();
+      if (data) {
+        rId = data.id;
+      } else {
+        const { data: newResp } = await supabase.from('responders').insert({ user_id: user.id, availability: true }).select('id').single();
+        if (newResp) rId = newResp.id;
+      }
+    }
     if (rId) setResponderId(rId);
 
     // Watch position
@@ -40,58 +75,57 @@ export function VolunteerHomeScreen({ navigation }: any) {
       async (loc) => {
         if (rId) {
           // Send location update to backend silently
-          await supabase
-            .from('responders')
-            .update({ 
-              location: `POINT(${loc.coords.longitude} ${loc.coords.latitude})` 
-            })
-            .eq('user_id', rId)
-            .select();
+          if (rId) {
+            await supabase
+              .from('responders')
+              .update({ 
+                location: `POINT(${loc.coords.longitude} ${loc.coords.latitude})` 
+              })
+              .eq('id', rId);
+          }
         }
       }
     );
   };
 
   const fetchActiveIncidents = async () => {
-    let localIncidents: any[] = [];
-    try {
-      const stored = await storage.getItem('trinetra_live_incidents');
-      if (stored) localIncidents = JSON.parse(stored);
-    } catch(e) {}
-
     const { data, error } = await supabase
       .from('incidents')
       .select('*')
       .eq('status', 'reported')
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(20);
       
-    let merged = [...localIncidents];
     if (!error && data) {
-      data.forEach(inc => {
-        if (!merged.find(m => m.id === inc.id)) merged.push(inc);
-      });
+      const sorted = [...data].sort((a, b) => (b.urgency_score || b.urgency_band || 0) - (a.urgency_score || a.urgency_band || 0));
+      setActiveIncidents(sorted);
     }
-    
-    merged.sort((a, b) => (b.urgency_score || b.urgency_band || 0) - (a.urgency_score || a.urgency_band || 0));
-    setActiveIncidents(merged);
   };
 
   const handleSelfAssign = async (inc: any) => {
+    if (!responderId) return;
     setIsSelfAssigning(true);
-    setTimeout(() => {
-      setIsSelfAssigning(false);
-      setMission({ id: 1, ...inc });
+    
+    const { data: newMission, error } = await supabase.from('missions').insert({
+      incident_id: inc.id,
+      responder_id: responderId,
+      status: 'assigned',
+    }).select().single();
+
+    if (!error && newMission) {
+      await supabase.from('incidents').update({ status: 'assigned' }).eq('id', inc.id);
+      setMission(newMission);
       setIncident(inc);
-    }, 1000);
+    }
+    setIsSelfAssigning(false);
   };
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
+    if (!mission) return;
     setIsAccepting(true);
-    setTimeout(() => {
-      setIsAccepting(false);
-      navigation.navigate('VolunteerMap');
-    }, 1000);
+    await supabase.from('missions').update({ status: 'accepted' }).eq('id', mission.id);
+    setIsAccepting(false);
+    navigation.navigate('VolunteerMap', { missionId: mission.id, incidentId: incident?.id, mission, incident });
   };
 
   return (

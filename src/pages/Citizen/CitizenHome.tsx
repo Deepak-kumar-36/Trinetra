@@ -12,7 +12,7 @@ import { useVoiceDistress } from '../../hooks/useVoiceDistress';
 
 export const CitizenHome: React.FC = () => {
   const [silentSosEnabled, setSilentSosEnabled] = useState(true);
-  const { isListening, countdown, cancelCountdown } = useVoiceDistress(silentSosEnabled);
+  const { isListening, countdown, cancelCountdown, isSupported } = useVoiceDistress(silentSosEnabled);
   const { user } = useAuth();
   const [sosActive, setSosActive] = useState(false);
   const [isSosTriggered, setIsSosTriggered] = useState(false);
@@ -48,7 +48,7 @@ export const CitizenHome: React.FC = () => {
       supabase.removeChannel(channel);
     };
   }, [user]);
-  const [sosTimer, setSosTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const sosTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<string | null>(null);
   const [activeNotification, setActiveNotification] = useState<{title: string, message: string} | null>(null);
   const [isTriageOpen, setIsTriageOpen] = useState(false);
@@ -157,20 +157,23 @@ export const CitizenHome: React.FC = () => {
   const handleSosStart = () => {
     if (isSosTriggered) return;
     setSosActive(true);
-    const timer = setTimeout(() => {
+    
+    // Clear any existing timer just in case
+    if (sosTimerRef.current) clearTimeout(sosTimerRef.current);
+    
+    sosTimerRef.current = setTimeout(() => {
       setIsSosTriggered(true);
       setSosActive(false);
       navigate('/citizen/report');
     }, 3000);
-    setSosTimer(timer);
   };
 
   const handleSosEnd = () => {
     if (isSosTriggered) return;
     setSosActive(false);
-    if (sosTimer) {
-      clearTimeout(sosTimer);
-      setSosTimer(null);
+    if (sosTimerRef.current) {
+      clearTimeout(sosTimerRef.current);
+      sosTimerRef.current = null;
     }
   };
 
@@ -391,7 +394,7 @@ export const CitizenHome: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col p-margin-mobile gap-section-gap overflow-y-auto max-w-[1440px] mx-auto w-full relative animate-fade-in" style={{ animationDelay: '0.2s', opacity: 0 }}>
+    <div className="flex-1 flex flex-col p-margin-mobile gap-section-gap overflow-y-auto max-w-[1440px] mx-auto w-full relative animate-fade-in" style={{ animationDelay: '0.2s' }}>
       {/* Hidden file input for Photo Report */}
       <input 
         type="file" 
@@ -424,15 +427,22 @@ export const CitizenHome: React.FC = () => {
       {/* Top Bar with Silent SOS Toggle */}
       <div className="flex justify-between items-center w-full mb-2">
         <h1 className="font-display-md text-primary opacity-0">Emergency</h1> {/* Spacer for layout balance */}
-        <button 
-          onClick={() => setSilentSosEnabled(!silentSosEnabled)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold transition-all shadow-sm ${silentSosEnabled ? 'bg-error/10 border-error/30 text-error' : 'bg-surface border-outline-variant text-on-surface-variant'}`}
-        >
-          <span className={`material-symbols-outlined text-[18px] ${silentSosEnabled && isListening ? 'animate-pulse' : ''}`}>
-            {silentSosEnabled ? 'mic' : 'mic_off'}
-          </span>
-          {silentSosEnabled ? 'Silent SOS: Active' : 'Silent SOS: Off'}
-        </button>
+        {isSupported ? (
+          <button 
+            onClick={() => setSilentSosEnabled(!silentSosEnabled)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold transition-all shadow-sm ${silentSosEnabled ? 'bg-error/10 border-error/30 text-error' : 'bg-surface border-outline-variant text-on-surface-variant'}`}
+          >
+            <span className={`material-symbols-outlined text-[18px] ${silentSosEnabled && isListening ? 'animate-pulse' : ''}`}>
+              {silentSosEnabled ? 'mic' : 'mic_off'}
+            </span>
+            {silentSosEnabled ? 'Silent SOS: Active' : 'Silent SOS: Off'}
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-bold transition-all shadow-sm bg-surface border-outline-variant text-on-surface-variant opacity-70">
+            <span className="material-symbols-outlined text-[18px] text-error">mic_off</span>
+            Voice SOS Not Supported
+          </div>
+        )}
       </div>
 
       {/* Massive SOS Button */}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { PorcupineManager, BuiltInKeyword } from '@picovoice/porcupine-react-native';
+import { PorcupineManager, BuiltInKeywords } from '@picovoice/porcupine-react-native';
 
 const PICOVOICE_ACCESS_KEY = process.env.EXPO_PUBLIC_PICOVOICE_ACCESS_KEY || ''; // Replace with user's key
 
@@ -8,7 +8,7 @@ export function useVoiceDistress(enabled: boolean) {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isSupported, setIsSupported] = useState(true);
   const porcupineManagerRef = useRef<PorcupineManager | null>(null);
-  const countdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     let isActive = true;
@@ -24,7 +24,7 @@ export function useVoiceDistress(enabled: boolean) {
         if (!porcupineManagerRef.current) {
           porcupineManagerRef.current = await PorcupineManager.fromBuiltInKeywords(
             PICOVOICE_ACCESS_KEY,
-            [BuiltInKeyword.PORCUPINE, BuiltInKeyword.GRAPEFRUIT], // Using built-in as placeholders for "Help" / "Emergency"
+            [BuiltInKeywords.PORCUPINE, BuiltInKeywords.GRAPEFRUIT], // Using built-in as placeholders for "Help" / "Emergency"
             (keywordIndex: number) => {
               if (keywordIndex >= 0) {
                 console.log("Wake word detected! Triggering SOS countdown...");

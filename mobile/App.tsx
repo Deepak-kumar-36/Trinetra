@@ -54,16 +54,14 @@ function RootNavigator() {
     });
 
     // 3. Handle Cold Starts
-    (async () => {
-      const initialAction = await QuickActions.initial();
-      if (initialAction?.id === 'report_emergency' && session) {
-        setTimeout(() => {
-          if (navigationRef.isReady()) {
-            navigationRef.navigate('CitizenHome' as never);
-          }
-        }, 100);
-      }
-    })();
+    const initialAction = QuickActions.initial;
+    if (initialAction?.id === 'report_emergency' && session) {
+      setTimeout(() => {
+        if (navigationRef.isReady()) {
+          navigationRef.navigate('CitizenHome' as never);
+        }
+      }, 100);
+    }
     
     // Initial connection check
     NetInfo.fetch().then(state => {

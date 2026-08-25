@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, AppState } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, AppState, type EventSubscription } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { supabase } from '../lib/supabase';
-import Vosk from 'react-native-vosk';
+import * as Vosk from 'react-native-vosk';
 
 interface KeywordConfig {
   phrase: string;
@@ -47,8 +47,10 @@ const DistressDetectionContext = createContext<DistressDetectionContextType>({
 
 export const useVoiceDistress = (initialEnabled: boolean) => {
   const context = useContext(DistressDetectionContext);
+  const enabled = context.enabled || initialEnabled;
+
   return {
-    isListening: context.enabled && context.phase === 'IDLE',
+    isListening: enabled && context.phase === 'IDLE',
     countdown: context.phase === 'CONFIRMING' ? context.countdown : null,
     cancelCountdown: context.cancelSOS,
     isSupported: true
@@ -66,10 +68,11 @@ export const DistressDetectionProvider: React.FC<{
   const [lastHeard, setLastHeard] = useState('');
   const [matchedKeyword, setMatchedKeyword] = useState<string | null>(null);
 
-  const voskRef = useRef<Vosk | null>(null);
   const isModelLoaded = useRef(false);
   const hitTimestamps = useRef<number[]>([]);
-  const listeningCycleTimer = useRef<NodeJS.Timeout | null>(null);
+  const listeningCycleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const listeningWindowTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultSubscription = useRef<EventSubscription | null>(null);
   const [appState, setAppState] = useState(AppState.currentState);
 
   // Sync settings to backend
@@ -92,9 +95,7 @@ export const DistressDetectionProvider: React.FC<{
 
   // Vosk Engine Setup
   useEffect(() => {
-    voskRef.current = new Vosk();
-    
-    voskRef.current.loadModel('vosk-model-small-en-us')
+    Vosk.loadModel('vosk-model-small-en-us')
       .then(() => {
         isModelLoaded.current = true;
       })
@@ -103,9 +104,9 @@ export const DistressDetectionProvider: React.FC<{
       });
 
     return () => {
-      if (voskRef.current) {
-        voskRef.current.unload();
-      }
+      stopListeningCycle();
+      resultSubscription.current?.remove();
+      Vosk.unload();
     };
   }, []);
 
@@ -149,17 +150,20 @@ export const DistressDetectionProvider: React.FC<{
   }, [enabled, appState, phase]);
 
   const startListeningCycle = () => {
-    if (!voskRef.current) return;
+    if (resultSubscription.current) return;
     
     const cycle = async () => {
       if (appState !== 'active' || !enabled || phase !== 'IDLE') return;
       
       try {
-        await voskRef.current?.start();
+        await Vosk.start({
+          grammar: [...DISTRESS_KEYWORDS.map((keyword) => keyword.phrase), '[unk]'],
+          timeout: LISTENING_WINDOW_MS,
+        });
         
         // Listen for a window
-        setTimeout(async () => {
-          if (voskRef.current) await voskRef.current.stop();
+        listeningWindowTimer.current = setTimeout(() => {
+          Vosk.stop();
           
           // Pause and restart
           listeningCycleTimer.current = setTimeout(cycle, LISTENING_PAUSE_MS);
@@ -171,27 +175,30 @@ export const DistressDetectionProvider: React.FC<{
       }
     };
 
-    if (voskRef.current) {
-      voskRef.current.onResult(handleVoskResult);
-      cycle();
-    }
+    resultSubscription.current = Vosk.onResult(handleVoskResult);
+    cycle();
   };
 
   const stopListeningCycle = async () => {
+    if (listeningWindowTimer.current) {
+      clearTimeout(listeningWindowTimer.current);
+      listeningWindowTimer.current = null;
+    }
     if (listeningCycleTimer.current) {
       clearTimeout(listeningCycleTimer.current);
       listeningCycleTimer.current = null;
     }
-    if (voskRef.current) {
-      try {
-        await voskRef.current.stop();
-      } catch(e) {}
-    }
+    resultSubscription.current?.remove();
+    resultSubscription.current = null;
+
+    try {
+      Vosk.stop();
+    } catch(e) {}
   };
 
   // Countdown timer for CONFIRMING phase
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval> | undefined;
     if (phase === 'CONFIRMING') {
       interval = setInterval(() => {
         setCountdown((c) => {
@@ -203,7 +210,9 @@ export const DistressDetectionProvider: React.FC<{
         });
       }, 1000);
     }
-    return () => clearInterval(interval);
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [phase]);
 
   const submitReport = async () => {
