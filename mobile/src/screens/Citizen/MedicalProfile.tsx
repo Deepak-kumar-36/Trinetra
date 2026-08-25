@@ -13,12 +13,56 @@ export function MedicalProfileScreen({ navigation }: any) {
   const [conditions, setConditions] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
 
+  React.useEffect(() => {
+    if (user?.id) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const loadProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('medical_profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+        
+      if (data) {
+        setBloodType(data.blood_type || '');
+        setAllergies(data.allergies || '');
+        setConditions(data.medical_conditions || '');
+        setEmergencyContact(data.emergency_contact || '');
+      }
+    } catch (e) {
+      // Profile might not exist yet, that's fine
+    }
+  };
+
   const handleSave = async () => {
+    if (!user?.id) {
+      Alert.alert('Error', 'You must be logged in to save your profile.');
+      return;
+    }
+    
     setLoading(true);
     try {
+      const { error } = await supabase
+        .from('medical_profiles')
+        .upsert({
+          user_id: user.id,
+          blood_type: bloodType,
+          allergies: allergies,
+          medical_conditions: conditions,
+          emergency_contact: emergencyContact,
+          updated_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+
       Alert.alert('Success', 'Medical profile securely saved.');
       navigation.goBack();
     } catch (e: any) {
+      console.error(e);
       Alert.alert('Error', e.message);
     } finally {
       setLoading(false);
