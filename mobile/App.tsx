@@ -21,6 +21,7 @@ import { CitizenHomeScreen } from './src/screens/Citizen/CitizenHome';
 import { PhotoReportScreen } from './src/screens/Citizen/PhotoReport';
 import { TriageProtocolScreen } from './src/screens/Citizen/TriageProtocol';
 import { MedicalProfileScreen } from './src/screens/Citizen/MedicalProfile';
+import { CitizenProfileScreen } from './src/screens/Citizen/CitizenProfile';
 import { NearbySheltersScreen } from './src/screens/Citizen/NearbyShelters';
 import { VolunteerHomeScreen } from './src/screens/Volunteer/VolunteerHome';
 import { VolunteerMapScreen } from './src/screens/Volunteer/VolunteerMap';
@@ -113,6 +114,7 @@ function RootNavigator() {
                 <Stack.Screen name="PhotoReport" component={PhotoReportScreen} options={{ headerShown: true, title: 'Photo Report', headerStyle: { backgroundColor: '#2563eb' }, headerTintColor: '#fff' }} />
                 <Stack.Screen name="TriageProtocol" component={TriageProtocolScreen} options={{ headerShown: true, title: 'Triage Protocol', headerStyle: { backgroundColor: '#2563eb' }, headerTintColor: '#fff' }} />
                 <Stack.Screen name="MedicalProfile" component={MedicalProfileScreen} options={{ headerShown: true, title: 'Medical Profile', headerStyle: { backgroundColor: '#2563eb' }, headerTintColor: '#fff' }} />
+                <Stack.Screen name="CitizenProfile" component={CitizenProfileScreen} options={{ headerShown: true, title: 'My Profile', headerStyle: { backgroundColor: '#2563eb' }, headerTintColor: '#fff' }} />
                 <Stack.Screen name="NearbyShelters" component={NearbySheltersScreen} options={{ headerShown: true, title: 'Nearby Shelters', headerStyle: { backgroundColor: '#2563eb' }, headerTintColor: '#fff' }} />
               </>
             )}

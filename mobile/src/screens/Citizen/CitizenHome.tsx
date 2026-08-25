@@ -151,7 +151,7 @@ export function CitizenHomeScreen({ navigation }: any) {
   const handleTileClick = (feature: string) => {
     if (feature === 'Photo Report') navigation.navigate('PhotoReport');
     else if (feature === 'Triage Protocol') navigation.navigate('TriageProtocol');
-    else if (feature === 'Medical Profile') navigation.navigate('MedicalProfile');
+    else if (feature === 'Citizen Profile') navigation.navigate('CitizenProfile');
     else if (feature === 'Nearby Shelters') navigation.navigate('NearbyShelters');
   };
 
@@ -354,9 +354,9 @@ export function CitizenHomeScreen({ navigation }: any) {
             <Text className="text-xs font-bold text-charcoal-text text-center w-16">Photo</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={() => handleTileClick('Medical Profile')} className="items-center">
+          <TouchableOpacity onPress={() => handleTileClick('Citizen Profile')} className="items-center">
             <View className="w-16 h-16 rounded-full bg-stone-bg border border-outline-variant/30 items-center justify-center mb-2 shadow-sm">
-              <MaterialIcons name="medical-information" size={28} color="#4A5D4E" />
+              <MaterialIcons name="person" size={28} color="#4A5D4E" />
             </View>
             <Text className="text-xs font-bold text-charcoal-text text-center w-16">Profile</Text>
           </TouchableOpacity>
