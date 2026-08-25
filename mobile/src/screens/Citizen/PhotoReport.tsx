@@ -6,11 +6,14 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { supabase } from '../../core/lib/supabase';
 import { storage } from '../../core/lib/storage';
+import { useAuth } from '../../core/contexts/AuthContext';
 
 export function PhotoReportScreen({ navigation }: any) {
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  const { user } = useAuth();
 
   const handlePhotoUpload = async (uri: string, base64Data: string) => {
     setIsUploading(true);
@@ -32,18 +35,11 @@ export function PhotoReportScreen({ navigation }: any) {
       // Ensure base64 string is correctly formatted for a Data URL
       const base64DataUrl = `data:image/jpeg;base64,${base64Data}`;
 
-      // 2. Fetch or Create UUID natively
-      let uid = await storage.getItem('trinetra_device_id');
-      if (!uid) {
-        uid = Math.random().toString(36).substring(2, 15);
-        await storage.setItem('trinetra_device_id', uid);
-      }
-
       // 3. Create Incident with trigger_source = 'photo_report'
       const { data, error: insertError } = await supabase
         .from('incidents')
         .insert({
-          reporter_id: uid,
+          reporter_id: user?.id,
           status: 'reported',
           category: 'general',
           urgency_score: 100,
