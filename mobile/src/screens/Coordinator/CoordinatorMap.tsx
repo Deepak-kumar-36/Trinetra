@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 import { supabase } from '../../core/lib/supabase';
 import { storage } from '../../core/lib/storage';
 
@@ -39,11 +39,14 @@ export function CoordinatorMapScreen({ navigation }: any) {
     }
   };
 
-  const handleMapPress = (e: any) => {
-    if (isAddingShelter) {
-      setPendingShelterPos(e.nativeEvent.coordinate);
-      setIsAddingShelter(false);
-    }
+  const onMessage = (event: any) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === 'mapPress' && isAddingShelter) {
+        setPendingShelterPos({ latitude: data.lat, longitude: data.lng });
+        setIsAddingShelter(false);
+      }
+    } catch (e) {}
   };
 
   const confirmAddShelter = () => {
@@ -58,6 +61,54 @@ export function CoordinatorMapScreen({ navigation }: any) {
       setNewShelterName('');
       setNewShelterCapacity('');
     }
+  };
+
+  const generateMapHTML = () => {
+    let incidentsJS = incidents.map((inc, idx) => {
+      let lat = 28.6139, lng = 77.2090;
+      if (inc.location && inc.location.startsWith('POINT(')) {
+        const match = inc.location.match(/POINT\(([^ ]+) ([^)]+)\)/);
+        if (match) { lng = parseFloat(match[1]); lat = parseFloat(match[2]); }
+      } else if (inc.pos) {
+        lat = inc.pos[0]; lng = inc.pos[1];
+      }
+      return `L.marker([${lat}, ${lng}], {icon: L.divIcon({className: 'custom-div-icon', html: "<div style='background-color:#ef4444;width:24px;height:24px;border-radius:50%;border:2px solid #fecaca;display:flex;align-items:center;justify-content:center;'><span style='color:white;font-size:12px;font-weight:bold;'>!</span></div>"})}).addTo(map);`;
+    }).join('\n');
+
+    let volunteersJS = volunteers.map(vol => 
+      `L.marker([${vol.pos.latitude}, ${vol.pos.longitude}], {icon: L.divIcon({className: 'custom-div-icon', html: "<div style='background-color:#4CAF50;width:16px;height:16px;border-radius:50%;border:2px solid white;'></div>"})}).addTo(map);`
+    ).join('\n');
+
+    let sheltersJS = shelters.map(s => 
+      `L.marker([${s.pos.latitude}, ${s.pos.longitude}], {icon: L.divIcon({className: 'custom-div-icon', html: "<div style='background-color:#3b82f6;width:24px;height:24px;border-radius:50%;border:2px solid #bfdbfe;'></div>"})}).addTo(map);`
+    ).join('\n');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+          <style> body { padding: 0; margin: 0; } html, body, #map { height: 100%; width: 100vw; } </style>
+      </head>
+      <body>
+          <div id="map"></div>
+          <script>
+              var map = L.map('map').setView([${centerPosition.latitude}, ${centerPosition.longitude}], 13);
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
+              
+              ${incidentsJS}
+              ${volunteersJS}
+              ${sheltersJS}
+
+              map.on('click', function(e) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'mapPress', lat: e.latlng.lat, lng: e.latlng.lng }));
+              });
+          </script>
+      </body>
+      </html>
+    `;
   };
 
   return (
@@ -105,57 +156,13 @@ export function CoordinatorMapScreen({ navigation }: any) {
           </View>
         )}
 
-        <MapView 
-          provider={PROVIDER_GOOGLE}
+        <WebView 
+          originWhitelist={['*']}
+          source={{ html: generateMapHTML() }}
           style={StyleSheet.absoluteFill}
-          initialRegion={{
-            latitude: centerPosition.latitude,
-            longitude: centerPosition.longitude,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
-          onPress={handleMapPress}
-        >
-          {/* Incidents */}
-          {incidents.map((inc, idx) => {
-            // Need to parse POINT(lon lat) to get actual coordinates
-            let coord = centerPosition; // fallback
-            if (inc.location && inc.location.startsWith('POINT(')) {
-              const match = inc.location.match(/POINT\(([^ ]+) ([^)]+)\)/);
-              if (match) {
-                coord = { latitude: parseFloat(match[2]), longitude: parseFloat(match[1]) };
-              }
-            } else if (inc.pos) { // For dummy data
-              coord = { latitude: inc.pos[0], longitude: inc.pos[1] };
-            }
-            
-            return (
-              <Marker key={`inc-${inc.id || idx}`} coordinate={coord} title={inc.title || 'Emergency'} description={`Severity: ${inc.urgency_band || 'High'}`}>
-                <View className="w-8 h-8 rounded-full bg-[#ef4444] border-2 border-[#fecaca] flex items-center justify-center">
-                  <MaterialIcons name="emergency" size={16} color="white" />
-                </View>
-              </Marker>
-            );
-          })}
-
-          {/* Volunteers */}
-          {volunteers.map((vol) => (
-            <Marker key={`vol-${vol.id}`} coordinate={vol.pos} title={vol.name} description={`Status: ${vol.status}`}>
-              <View className="w-6 h-6 rounded-full bg-[#4CAF50] border-2 border-white flex items-center justify-center">
-                <View className="w-2 h-2 bg-white rounded-full" />
-              </View>
-            </Marker>
-          ))}
-
-          {/* Shelters */}
-          {shelters.map((shelter) => (
-            <Marker key={`shelter-${shelter.id}`} coordinate={shelter.pos} title={shelter.name} description={`Capacity: ${shelter.capacity}`}>
-              <View className="w-8 h-8 rounded-full bg-[#3b82f6] border-2 border-[#bfdbfe] flex items-center justify-center">
-                <MaterialIcons name="home" size={16} color="white" />
-              </View>
-            </Marker>
-          ))}
-        </MapView>
+          scrollEnabled={false}
+          onMessage={onMessage}
+        />
         
         {/* Stats Overlay */}
         <View className="absolute bottom-6 left-4 bg-white/90 p-4 rounded-xl shadow-md border border-gray-100 flex-col gap-2 z-10">
