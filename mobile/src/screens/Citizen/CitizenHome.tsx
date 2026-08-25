@@ -337,34 +337,37 @@ export function CitizenHomeScreen({ navigation }: any) {
         </View>
 
         {/* Predictive Grid */}
-        <View className="w-full flex-row flex-wrap justify-between mt-8">
-          {/* Triage Tile */}
-          <TouchableOpacity onPress={() => handleTileClick('Triage Protocol')} className="w-[48%] bg-stone-bg border border-outline-variant/30 rounded-xl p-5 min-h-[160px] mb-4">
-            <MaterialIcons name="file-download" size={32} color="#4A5D4E" style={{ marginBottom: 20 }} />
-            <Text className="text-xl font-bold text-charcoal-text">Triage Protocol</Text>
-            <Text className="text-[10px] text-on-surface-variant uppercase mt-2 font-bold">Initiate Assessment</Text>
+        {/* 4 Bottom Action Buttons */}
+        <View className="w-full flex-row justify-between mt-auto pt-8 pb-4">
+          
+          <TouchableOpacity onPress={() => handleTileClick('Triage Protocol')} className="items-center">
+            <View className="w-16 h-16 rounded-full bg-stone-bg border border-outline-variant/30 items-center justify-center mb-2 shadow-sm">
+              <MaterialIcons name="local-hospital" size={28} color="#4A5D4E" />
+            </View>
+            <Text className="text-xs font-bold text-charcoal-text text-center w-16">Triage</Text>
           </TouchableOpacity>
 
-          {/* Photo Report Tile */}
-          <TouchableOpacity onPress={() => handleTileClick('Photo Report')} className="w-[48%] bg-stone-bg border border-outline-variant/30 rounded-xl p-5 min-h-[160px] mb-4">
-            <MaterialIcons name="photo-camera" size={32} color="#4A5D4E" style={{ marginBottom: 20 }} />
-            <Text className="text-xl font-bold text-charcoal-text">Photo Report</Text>
-            <Text className="text-[10px] text-on-surface-variant uppercase mt-2 font-bold">Send visual context</Text>
+          <TouchableOpacity onPress={() => handleTileClick('Photo Report')} className="items-center">
+            <View className="w-16 h-16 rounded-full bg-stone-bg border border-outline-variant/30 items-center justify-center mb-2 shadow-sm">
+              <MaterialIcons name="photo-camera" size={28} color="#4A5D4E" />
+            </View>
+            <Text className="text-xs font-bold text-charcoal-text text-center w-16">Photo</Text>
           </TouchableOpacity>
 
-          {/* Medical ID Tile */}
-          <TouchableOpacity onPress={() => handleTileClick('Medical Profile')} className="w-[48%] bg-stone-bg border border-outline-variant/30 rounded-xl p-5 min-h-[160px]">
-            <MaterialIcons name="medical-services" size={32} color="#4A5D4E" style={{ marginBottom: 20 }} />
-            <Text className="text-xl font-bold text-charcoal-text">Medical Profile</Text>
-            <Text className="text-[10px] text-on-surface-variant uppercase mt-2 font-bold">Critical Data</Text>
+          <TouchableOpacity onPress={() => handleTileClick('Medical Profile')} className="items-center">
+            <View className="w-16 h-16 rounded-full bg-stone-bg border border-outline-variant/30 items-center justify-center mb-2 shadow-sm">
+              <MaterialIcons name="medical-information" size={28} color="#4A5D4E" />
+            </View>
+            <Text className="text-xs font-bold text-charcoal-text text-center w-16">Profile</Text>
           </TouchableOpacity>
 
-          {/* Show Map Tile */}
-          <TouchableOpacity onPress={() => handleTileClick('Nearby Shelters')} className="w-[48%] bg-stone-bg border border-outline-variant/30 rounded-xl p-5 min-h-[160px]">
-            <MaterialIcons name="map" size={32} color="#4A5D4E" style={{ marginBottom: 20 }} />
-            <Text className="text-xl font-bold text-charcoal-text">Show Map</Text>
-            <Text className="text-[10px] text-on-surface-variant uppercase mt-2 font-bold">Shelters & Supplies</Text>
+          <TouchableOpacity onPress={() => handleTileClick('Nearby Shelters')} className="items-center">
+            <View className="w-16 h-16 rounded-full bg-stone-bg border border-outline-variant/30 items-center justify-center mb-2 shadow-sm">
+              <MaterialIcons name="map" size={28} color="#4A5D4E" />
+            </View>
+            <Text className="text-xs font-bold text-charcoal-text text-center w-16">Show Map</Text>
           </TouchableOpacity>
+
         </View>
 
       </ScrollView>

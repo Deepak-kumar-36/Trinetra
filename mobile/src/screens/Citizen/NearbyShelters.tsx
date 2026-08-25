@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Alert, Dimensions } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../core/lib/supabase';
 import { MaterialIcons } from '@expo/vector-icons';
-import MapView, { Marker } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
 
 export function NearbySheltersScreen({ navigation }: any) {
@@ -44,16 +44,59 @@ export function NearbySheltersScreen({ navigation }: any) {
     }
   };
 
-  const initialRegion = location ? {
-    latitude: location.coords.latitude,
-    longitude: location.coords.longitude,
-    latitudeDelta: 0.1,
-    longitudeDelta: 0.1,
-  } : {
-    latitude: 28.6139,
-    longitude: 77.2090,
-    latitudeDelta: 0.1,
-    longitudeDelta: 0.1,
+  const generateMapHTML = () => {
+    const lat = location?.coords.latitude || 28.6139;
+    const lng = location?.coords.longitude || 77.2090;
+    
+    // Generate JS for markers
+    let markersJS = '';
+    shelters.forEach((s) => {
+      const match = s.location?.match(/POINT\(([^ ]+) ([^ ]+)\)/);
+      if (match) {
+        const sLng = parseFloat(match[1]);
+        const sLat = parseFloat(match[2]);
+        markersJS += `
+          L.marker([${sLat}, ${sLng}]).addTo(map)
+            .bindPopup("<b>${s.name}</b><br>Capacity: ${s.available_capacity}/${s.total_capacity}");
+        `;
+      }
+    });
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+          <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+          <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+          <style>
+              body { padding: 0; margin: 0; }
+              html, body, #map { height: 100%; width: 100vw; }
+          </style>
+      </head>
+      <body>
+          <div id="map"></div>
+          <script>
+              var map = L.map('map').setView([${lat}, ${lng}], 12);
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                  maxZoom: 19,
+                  attribution: '© OpenStreetMap'
+              }).addTo(map);
+              
+              // Add User Location Marker
+              var userIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: "<div style='background-color:#4A5D4E;width:15px;height:15px;border-radius:50%;border:2px solid white;box-shadow:0 0 5px rgba(0,0,0,0.5);'></div>",
+                iconSize: [15, 15],
+                iconAnchor: [7, 7]
+              });
+              L.marker([${lat}, ${lng}], {icon: userIcon}).addTo(map).bindPopup("<b>You are here</b>");
+              
+              ${markersJS}
+          </script>
+      </body>
+      </html>
+    `;
   };
 
   return (
@@ -64,34 +107,16 @@ export function NearbySheltersScreen({ navigation }: any) {
         </View>
       ) : (
         <>
-          <MapView 
-            style={{ width: Dimensions.get('window').width, height: Dimensions.get('window').height * 0.5 }}
-            initialRegion={initialRegion}
-            showsUserLocation={true}
-          >
-            {shelters.map((s, idx) => {
-              // Parse POINT(lng lat)
-              const match = s.location?.match(/POINT\(([^ ]+) ([^ ]+)\)/);
-              if (!match) return null;
-              const lng = parseFloat(match[1]);
-              const lat = parseFloat(match[2]);
-              
-              return (
-                <Marker 
-                  key={s.id || idx}
-                  coordinate={{ latitude: lat, longitude: lng }}
-                  title={s.name}
-                  description={`Capacity: ${s.available_capacity}/${s.total_capacity}`}
-                >
-                  <View className="bg-green-600 p-2 rounded-full border-2 border-white shadow-md">
-                    <MaterialIcons name="house" size={20} color="white" />
-                  </View>
-                </Marker>
-              );
-            })}
-          </MapView>
+          <View style={{ width: '100%', height: Dimensions.get('window').height * 0.5 }}>
+            <WebView
+              originWhitelist={['*']}
+              source={{ html: generateMapHTML() }}
+              style={{ flex: 1 }}
+              scrollEnabled={false}
+            />
+          </View>
           
-          <ScrollView className="flex-1 bg-gray-50 rounded-t-3xl -mt-6 p-6">
+          <ScrollView className="flex-1 bg-gray-50 rounded-t-3xl -mt-6 p-6 z-10">
             <Text className="text-2xl font-bold text-gray-800 mb-4">Relief Camps</Text>
             {shelters.length === 0 ? (
               <Text className="text-gray-500">No shelters found nearby.</Text>
