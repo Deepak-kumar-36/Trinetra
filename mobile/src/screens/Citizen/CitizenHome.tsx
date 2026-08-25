@@ -89,7 +89,7 @@ export function CitizenHomeScreen({ navigation }: any) {
   };
 
   // 3. Dispatch the SOS
-  const dispatchManualSos = async () => {
+  const dispatchIncident = async (category = 'general') => {
     try {
       // Get fresh location if possible, otherwise use last known
       let currentLoc = location;
@@ -107,10 +107,10 @@ export function CitizenHomeScreen({ navigation }: any) {
       const { data, error } = await supabase.from('incidents').insert({
         reporter_id: user?.id,
         status: 'reported',
-        category: 'general',
+        category: category.toLowerCase(),
         trigger_source: 'manual',
         trigger_confirmed: true,
-        raw_transcript: "Manual SOS triggered. Awaiting voice context.",
+        raw_transcript: `${category === 'general' ? 'Manual SOS' : category + ' incident'} triggered. Awaiting voice context.`,
         location: pointStr
       }).select().single();
       
@@ -130,12 +130,21 @@ export function CitizenHomeScreen({ navigation }: any) {
     }
   };
 
+  const dispatchManualSos = () => {
+    dispatchIncident('general');
+  };
+
   // 4. Voice Recording Actions
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
     if (audioRecorder.isRecording) {
-      audioRecorder.stop();
+      await audioRecorder.stop();
     } else {
-      audioRecorder.record();
+      try {
+        await audioRecorder.prepareToRecordAsync();
+        audioRecorder.record();
+      } catch (err) {
+        console.error("Failed to start recording", err);
+      }
     }
   };
 
@@ -147,8 +156,7 @@ export function CitizenHomeScreen({ navigation }: any) {
   };
 
   const handleIncidentSelect = (type: string) => {
-    // Treat as manual emergency trigger
-    handleSosStart();
+    dispatchIncident(type);
   };
 
   const submitVoiceReport = async () => {
@@ -404,56 +412,54 @@ export function CitizenHomeScreen({ navigation }: any) {
 
       {/* Voice Prompt Modal */}
       {showVoicePrompt && (
-        <View className="absolute inset-0 bg-black/80 flex items-center justify-center p-6 z-50">
-          <View className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-xl items-center">
-            <MaterialIcons name="record-voice-over" size={48} color="#ba1a1a" className="mb-4" />
-            <Text className="text-2xl font-bold text-charcoal-text mb-2 text-center">Add Voice Context</Text>
-            <Text className="text-gray-600 mb-6 text-sm text-center">
-              Your SOS has been dispatched. Please describe your situation, injuries, or hazards to help responders.
-            </Text>
-            
+        <View className="absolute inset-0 bg-white flex items-center justify-center p-6 z-50 h-full w-full">
+          <MaterialIcons name="record-voice-over" size={64} color="#ba1a1a" className="mb-6" />
+          <Text className="text-3xl font-bold text-charcoal-text mb-4 text-center">Add Voice Context</Text>
+          <Text className="text-gray-600 mb-12 text-base text-center px-4">
+            Your SOS has been dispatched. Please describe your situation, injuries, or hazards to help responders.
+          </Text>
+          
+          <TouchableOpacity 
+            onPress={toggleRecording}
+            className={`w-32 h-32 rounded-full flex items-center justify-center mb-12 shadow-lg border-4 ${
+              audioRecorder.isRecording 
+                ? 'bg-white border-error shadow-error/30' 
+                : 'bg-error border-error shadow-error/50'
+            }`}
+          >
+            <MaterialIcons 
+              name={audioRecorder.isRecording ? 'stop' : 'mic'} 
+              size={48} 
+              color={audioRecorder.isRecording ? '#ba1a1a' : 'white'} 
+            />
+          </TouchableOpacity>
+          
+          {audioRecorder.isRecording && (
+            <Text className="text-error font-bold mb-8 text-lg">Recording in progress...</Text>
+          )}
+
+          {!audioRecorder.isRecording && audioRecorder.uri && (
+            <Text className="text-primary font-bold mb-8 text-lg">Audio Recorded Successfully</Text>
+          )}
+
+          <View className="flex-row gap-4 w-full px-4 absolute bottom-12">
             <TouchableOpacity 
-              onPress={toggleRecording}
-              className={`w-20 h-20 rounded-full flex items-center justify-center mb-6 shadow-lg border-4 ${
-                audioRecorder.isRecording 
-                  ? 'bg-white border-error shadow-error/30' 
-                  : 'bg-error border-error shadow-error/50'
-              }`}
+              className="flex-1 bg-gray-200 p-5 rounded-2xl items-center"
+              onPress={skipVoiceReport}
+              disabled={isUploading}
             >
-              <MaterialIcons 
-                name={audioRecorder.isRecording ? 'stop' : 'mic'} 
-                size={36} 
-                color={audioRecorder.isRecording ? '#ba1a1a' : 'white'} 
-              />
+              <Text className="font-bold text-gray-700 text-lg">Skip</Text>
             </TouchableOpacity>
             
-            {audioRecorder.isRecording && (
-              <Text className="text-error font-bold mb-6">Recording...</Text>
-            )}
-
-            {!audioRecorder.isRecording && audioRecorder.uri && (
-              <Text className="text-primary font-bold mb-6">Audio Recorded Successfully</Text>
-            )}
-
-            <View className="flex-row gap-3 w-full">
-              <TouchableOpacity 
-                className="flex-1 bg-gray-200 p-4 rounded-xl items-center"
-                onPress={skipVoiceReport}
-                disabled={isUploading}
-              >
-                <Text className="font-bold text-gray-700">Skip</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                className={`flex-1 p-4 rounded-xl items-center ${(audioRecorder.isRecording || !audioRecorder.uri || isUploading) ? 'bg-primary/50' : 'bg-primary'}`}
-                onPress={submitVoiceReport}
-                disabled={audioRecorder.isRecording || !audioRecorder.uri || isUploading}
-              >
-                <Text className="font-bold text-white">
-                  {isUploading ? 'Sending...' : 'Send Voice'}
-                </Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              className={`flex-1 p-5 rounded-2xl items-center ${(audioRecorder.isRecording || !audioRecorder.uri || isUploading) ? 'bg-primary/50' : 'bg-primary'}`}
+              onPress={submitVoiceReport}
+              disabled={audioRecorder.isRecording || !audioRecorder.uri || isUploading}
+            >
+              <Text className="font-bold text-white text-lg">
+                {isUploading ? 'Sending...' : 'Send Voice'}
+              </Text>
+            </TouchableOpacity>
           </View>
         </View>
       )}
