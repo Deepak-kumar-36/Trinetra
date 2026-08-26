@@ -1,28 +1,25 @@
 import { useState, useEffect, useRef } from 'react';
-import Vosk from 'react-native-vosk';
+import * as Vosk from 'react-native-vosk';
 
 export function useVoiceDistress(enabled: boolean) {
   const [isListening, setIsListening] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isSupported, setIsSupported] = useState(true);
   
-  const voskRef = useRef<any>(null);
   const countdownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const resultSubRef = useRef<any>(null);
 
   useEffect(() => {
     let isActive = true;
 
     const startVosk = async () => {
       try {
-        if (!voskRef.current) {
-          const vosk = new Vosk();
-          voskRef.current = vosk;
-          
-          await vosk.loadModel('model-en');
-          
-          vosk.onResult((res: any) => {
-            if (!res || !res.data) return;
-            const text = typeof res.data === 'string' ? res.data.toLowerCase() : '';
+        await Vosk.loadModel('model-en');
+        
+        if (!resultSubRef.current) {
+          resultSubRef.current = Vosk.onResult((res: string) => {
+            if (!res) return;
+            const text = res.toLowerCase();
             
             // Wake words
             if (text.includes('help') || text.includes('emergency') || text.includes('bachao')) {
@@ -32,7 +29,7 @@ export function useVoiceDistress(enabled: boolean) {
           });
         }
         
-        await voskRef.current.start({
+        await Vosk.start({
           grammar: ['help', 'emergency', 'bachao', '[unk]']
         });
         
@@ -45,10 +42,12 @@ export function useVoiceDistress(enabled: boolean) {
 
     const stopVosk = () => {
       try {
-        if (voskRef.current) {
-          voskRef.current.stop();
-          if (isActive) setIsListening(false);
+        Vosk.stop();
+        if (resultSubRef.current) {
+          resultSubRef.current.remove();
+          resultSubRef.current = null;
         }
+        if (isActive) setIsListening(false);
       } catch (err) {
         console.error("Failed to stop Vosk:", err);
       }

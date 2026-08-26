@@ -229,7 +229,7 @@ export function CitizenHomeScreen({ navigation }: any) {
           ) : (
             <View className="flex-row items-center justify-center gap-2 px-4 py-2 rounded-full border bg-surface border-outline-variant">
               <MaterialIcons name="mic-off" size={18} color="#434843" />
-              <Text className="text-sm font-bold text-on-surface-variant">Silent SOS: Key Missing</Text>
+              <Text className="text-sm font-bold text-on-surface-variant">Silent SOS: Not Supported</Text>
             </View>
           )}
         </View>
