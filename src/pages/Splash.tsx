@@ -11,10 +11,9 @@ export const Splash: React.FC = () => {
     
     const timer = setTimeout(() => {
       if (user) {
-        const storedRole = localStorage.getItem('trinetra_role') || 'citizen';
-        navigate(`/${storedRole}`);
+        navigate(`/coordinator`);
       } else {
-        navigate('/role-selection');
+        navigate('/login');
       }
     }, 2000); // reduced to 2s for better UX
     return () => clearTimeout(timer);

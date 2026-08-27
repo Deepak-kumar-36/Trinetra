@@ -3,6 +3,10 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 export interface User {
   uid: string;
   email: string | null;
+  displayName?: string;
+  user_metadata?: {
+    full_name?: string;
+  };
 }
 
 interface AuthContextType {

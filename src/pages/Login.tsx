@@ -1,45 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingScreen } from '../components/ui/LoadingScreen';
 
 const DEMO_ACCOUNTS = [
-  { email: 'coordinator@trinetra.org', role: 'coordinator', displayName: 'Deepak Kumar' },
-  { email: 'volunteer@trinetra.org', role: 'volunteer', displayName: 'Vishesh Bharti' },
-  { email: 'citizen@trinetra.org', role: 'citizen', displayName: 'Moulik Tiwari' },
-  { email: 'test@trinetra.org', role: 'test', displayName: 'Test User' }
+  { email: 'coordinator@trinetra.org', role: 'coordinator', displayName: 'Deepak Kumar' }
 ];
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const roleFromParams = searchParams.get('role');
-  
   const { user, loading, signInAs } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  
   const [isLogin, setIsLogin] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Auto redirect if already logged in
   useEffect(() => {
     if (user && !loading) {
-      const savedRole = roleFromParams || localStorage.getItem('trinetra_role') || 'citizen';
-      if (roleFromParams) {
-        localStorage.setItem('trinetra_role', savedRole);
-      }
-      
-      const userEmail = user.email || '';
-      if (userEmail.startsWith('citizen')) navigate('/citizen');
-      else if (userEmail.startsWith('volunteer')) navigate('/volunteer');
-      else if (userEmail.startsWith('coordinator')) navigate('/coordinator');
-      else navigate(`/${savedRole}`);
+      navigate('/coordinator');
     }
-  }, [user, loading, navigate, roleFromParams]);
+  }, [user, loading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +56,7 @@ export const Login: React.FC = () => {
             <img src="/logo.png" alt="TriNetra" className="h-24 mx-auto mb-4 object-contain drop-shadow-xl" />
           </Link>
           <p className="text-on-surface-variant font-medium mt-1">
-            {roleFromParams ? `Login as ${roleFromParams.charAt(0).toUpperCase() + roleFromParams.slice(1)}` : 'Secure Access Portal'}
+            Secure Command Center
           </p>
         </div>
 

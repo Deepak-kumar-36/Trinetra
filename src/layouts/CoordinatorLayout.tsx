@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Outlet, NavLink, useLocation, Link, useNavigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTTS } from '../contexts/TTSContext';
 
 export const CoordinatorLayout: React.FC = () => {
-  const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -162,7 +161,7 @@ export const CoordinatorLayout: React.FC = () => {
                 to="/coordinator/resources"
                 className="hover:bg-surface-container-high transition-transform active:scale-95 duration-200 rounded-full overflow-hidden w-12 h-12 flex items-center justify-center border-2 border-surface-variant hover:border-error bg-primary text-on-primary font-bold text-lg ml-1"
               >
-                {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
+                {user?.user_metadata?.full_name ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
               </NavLink>
             </div>
           </div>
@@ -244,10 +243,10 @@ export const CoordinatorLayout: React.FC = () => {
               {/* Profile Snippet */}
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-primary flex items-center justify-center bg-primary text-on-primary font-bold text-lg">
-                  {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
+                  {user?.user_metadata?.full_name ? user.user_metadata.full_name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
                 </div>
                 <div>
-                  <h3 className="font-label-lg text-on-surface">{user?.displayName || 'Coordinator'}</h3>
+                  <h3 className="font-label-lg text-on-surface">{user?.user_metadata?.full_name || 'Coordinator'}</h3>
                   <p className="text-xs text-on-surface-variant uppercase tracking-widest">ID: {user?.uid || 'CMD-0932'}</p>
                 </div>
               </div>
