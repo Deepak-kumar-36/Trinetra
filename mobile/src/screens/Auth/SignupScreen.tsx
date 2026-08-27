@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../core/lib/supabase';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -63,9 +63,14 @@ export function SignupScreen({ navigation }: any) {
             <MaterialIcons name="arrow-back" size={28} color="#374151" />
           </TouchableOpacity>
 
-          <View className="mb-8">
-            <Text className="text-3xl font-bold text-gray-800 tracking-tight">Create Account</Text>
-            <Text className="text-gray-500 mt-2">Join the TriNetra emergency network</Text>
+          <View className="items-center mb-8 mt-2">
+            <Image 
+              source={require('../../../assets/logo.png')} 
+              className="w-48 h-24 mb-6"
+              resizeMode="contain"
+            />
+            <Text className="text-3xl font-bold text-gray-800 tracking-tight text-center">Create Account</Text>
+            <Text className="text-gray-500 mt-2 text-center">Join the emergency network</Text>
           </View>
 
           <View className="w-full space-y-4 gap-4">

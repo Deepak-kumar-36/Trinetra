@@ -27,18 +27,11 @@ export const Splash: React.FC = () => {
 
       <main className="relative z-10 flex flex-col items-center justify-center w-full max-w-sm px-margin-mobile animate-fade-in">
         {/* App Icon */}
-        <div className="w-40 h-40 md:w-48 md:h-48 rounded-3xl overflow-hidden shadow-[0_12px_40px_rgba(140,115,85,0.15)] mb-8 pulse-border bg-surface p-1 relative flex items-center justify-center">
-          <img src="/logo.png" alt="trinetra Logo" className="w-full h-full object-contain rounded-2xl relative z-10" />
+        <div className="w-48 h-48 md:w-64 md:h-64 rounded-3xl mb-4 relative flex items-center justify-center drop-shadow-2xl">
+          <img src="/logo.png" alt="trinetra Logo" className="w-full h-full object-contain relative z-10 scale-125" />
         </div>
         
-        {/* Logo/Brand Text */}
-        <h1 className="font-headline-lg-mobile md:font-headline-lg tracking-tight mb-2 flex items-center justify-center">
-          <span className="text-[#FF9933]">t</span>
-          <span className="text-[#FFFFFF] drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">r</span>
-          <span className="text-[#138808]">i</span>
-          <span className="font-bold text-primary ml-0.5 lowercase">netra</span>
-        </h1>
-        <p className="font-body-md text-on-surface-variant text-center opacity-80 mb-16">
+        <p className="font-body-md text-on-surface-variant text-center opacity-80 mb-16 mt-6">
           Commanded Serenity
         </p>
         

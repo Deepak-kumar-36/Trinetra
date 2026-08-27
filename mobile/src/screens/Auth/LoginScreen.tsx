@@ -41,15 +41,12 @@ export function LoginScreen({ navigation }: any) {
       >
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}>
           
-          <View className="items-center mb-10">
-            <View className="bg-white p-3 rounded-3xl shadow-sm border border-gray-100 mb-6">
-              <Image 
-                source={require('../../../assets/icon.png')} 
-                className="w-20 h-20 rounded-2xl"
-                resizeMode="contain"
-              />
-            </View>
-            <Text className="text-3xl font-bold text-gray-800 mb-2 tracking-tight">TriNetra</Text>
+          <View className="items-center mb-10 mt-6">
+            <Image 
+              source={require('../../../assets/logo.png')} 
+              className="w-48 h-32 mb-4"
+              resizeMode="contain"
+            />
             <Text className="text-gray-500 text-center">Unified Emergency Response System</Text>
           </View>
 

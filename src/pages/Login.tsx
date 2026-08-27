@@ -70,13 +70,8 @@ export const Login: React.FC = () => {
         
         <div className="text-center mb-8">
           <Link to="/" className="inline-block hover:scale-105 transition-transform">
-            <div className="w-16 h-16 bg-gradient-to-tr from-primary to-primary-container rounded-2xl mx-auto flex items-center justify-center shadow-lg shadow-primary/20 mb-4 border border-white/50">
-              <span className="material-symbols-outlined text-on-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                policy
-              </span>
-            </div>
+            <img src="/logo.png" alt="TriNetra" className="h-24 mx-auto mb-4 object-contain drop-shadow-xl" />
           </Link>
-          <h1 className="text-3xl font-bold text-charcoal-text font-serif">TriNetra</h1>
           <p className="text-on-surface-variant font-medium mt-1">
             {roleFromParams ? `Login as ${roleFromParams.charAt(0).toUpperCase() + roleFromParams.slice(1)}` : 'Secure Access Portal'}
           </p>
